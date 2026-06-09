@@ -1,0 +1,9 @@
+# Marketing Operations
+
+These agents help marketing teams understand performance, catch delivery issues,
+and reduce wasted campaign spend.
+
+| Agent | What it does |
+|---|---|
+| [Campaign Performance Agent](revops-campaign-performance/SKILL.md) | Combines campaign data across channels and flags underperformance. |
+| [Email Deliverability Agent](revops-email-deliverability/SKILL.md) | Monitors sender reputation, bounce risk, authentication, and inbox placement. |

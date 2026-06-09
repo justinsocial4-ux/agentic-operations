@@ -1,0 +1,17 @@
+# Local files
+.DS_Store
+
+# Secrets and local environment files
+.env
+.env.*
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Generated outputs and private exports
+exports/
+reports/
+tmp/
+private/
+*.log
