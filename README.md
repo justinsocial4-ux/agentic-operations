@@ -1,20 +1,25 @@
 # Agentic Operations
 
-Agentic Operations is a public library of RevOps agent specifications.
+Agentic Operations is a revenue operations control layer.
 
-In plain English: this repo shows how revenue operations work can be broken into
-focused AI agents. Each agent has a clear job, the data it needs, the decisions
-it supports, and the guardrails it should follow.
+In plain English: this is the operating map for a modular agent system that
+handles the repetitive, messy, high-leverage work inside a revenue organization.
+Each agent owns a specific business function, defines the data it needs, produces
+an operational output, and respects clear approval boundaries before changing
+live systems.
 
-This is designed for interviews, portfolio review, and discussion with operators,
-founders, and teams evaluating practical AI workflows.
+The operating thesis: revenue operations should behave less like scattered
+manual work and more like a controlled system with clear inputs, outputs,
+owners, confidence thresholds, and escalation paths.
 
 ## What Is In This Repo
 
-- 25 RevOps agent specifications
+- 25 RevOps agent runbooks
 - 11 business categories
-- readable Markdown files instead of hidden packages
-- simple maps so non-technical readers can understand the system quickly
+- operating boundaries for analysis, recommendations, and live-system writes
+- category maps that show how the system fits together
+- implementation-ready logic for data quality, GTM motion, customer success,
+  tech-stack control, and revenue intelligence
 
 ## Quick Visual Map
 
@@ -45,6 +50,29 @@ flowchart LR
     L --> L1["1 agent"]
 ```
 
+## Operating Layers
+
+```mermaid
+flowchart TD
+    CP["Agentic Operations Control Layer"] --> DF["Data Foundation"]
+    CP --> GTM["GTM Motion"]
+    CP --> RE["Revenue Execution"]
+    CP --> CL["Customer Lifecycle"]
+    CP --> SC["Systems Control"]
+
+    DF --> DQ["Data Quality and CRM Hygiene"]
+    DF --> RA["Reporting and Analytics"]
+    GTM --> ICP["ICP and Market Strategy"]
+    GTM --> MKT["Marketing Operations"]
+    GTM --> EVT["Event Marketing"]
+    RE --> RI["Revenue Intelligence"]
+    RE --> LM["Lead Management"]
+    RE --> OO["Outbound Orchestration"]
+    RE --> EN["Enablement Operations"]
+    CL --> CS["Customer Success Operations"]
+    SC --> TSO["Tech Stack Operations"]
+```
+
 ## Agent Categories
 
 | Category | What it helps with | Agents |
@@ -63,9 +91,9 @@ flowchart LR
 
 ## Where To Start
 
-- [Agent Map](docs/agent-map.md) gives a plain-English inventory.
+- [Agent Map](docs/agent-map.md) shows the operating map.
 - [Repository Structure](docs/repo-structure.md) explains how the folders are organized.
-- [Public Sharing Notes](docs/public-sharing-notes.md) explains the boundary of what this repo is and is not.
+- [Operating Boundaries](docs/operating-boundaries.md) defines what agents can analyze, recommend, and change.
 
 ## How To Read An Agent
 
@@ -77,14 +105,14 @@ Each agent usually answers five questions:
 4. What should it produce?
 5. What should it avoid doing without approval?
 
-The files are written as specifications. They are meant to show operating logic,
-workflow design, and product thinking. They are not presented as production-ready
-software.
+The agent files are runbooks. They define trigger language, required inputs,
+execution logic, output formats, confidence checks, and escalation rules.
 
 ## Status
 
-This is an interview-ready draft library. Some agents began as proof-of-concept
-packages and have been unpacked into normal folders so they are easier to review.
+This repo contains the controlled inspection surface for Agentic Operations:
+the runbook layer, category map, and approval model without private customer
+data, credentials, or deployment configuration.
 
 ## License
 

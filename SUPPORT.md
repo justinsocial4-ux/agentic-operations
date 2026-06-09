@@ -1,6 +1,6 @@
 # Support Boundary
 
-This repo is a public portfolio library of RevOps agent specifications.
+This repo contains the readable operating layer for Agentic Operations.
 
 ## What It Provides
 
@@ -17,4 +17,5 @@ This repo is a public portfolio library of RevOps agent specifications.
 - Customer-specific implementation guarantees
 - Legal, compliance, or security certification
 
-Use these files as a starting point for discussion, prototyping, and review.
+Use these files as the control surface for understanding, extending, or adapting
+the operating model.

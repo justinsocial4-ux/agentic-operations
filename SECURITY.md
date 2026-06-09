@@ -1,7 +1,7 @@
 # Security And Privacy
 
-This repository is a public library of agent specifications. It should contain
-workflow designs and examples only.
+This repository contains the controlled inspection surface for Agentic Operations.
+It should contain agent runbooks, operating logic, and safe examples only.
 
 ## Do Not Commit
 
@@ -14,8 +14,8 @@ workflow designs and examples only.
 
 ## Before Publishing
 
-Run a repository scan for secrets and private data. Treat any real customer data
-as a blocker for public release.
+Run a repository scan for secrets and private data before any external release.
+Treat real customer data as a blocker.
 
 ## Reporting A Security Issue
 

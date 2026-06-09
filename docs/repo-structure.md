@@ -1,6 +1,6 @@
 # Repository Structure
 
-The repo is organized by business problem, not by build order.
+The repo is organized by operating domain.
 
 ```text
 agentic-operations/
@@ -19,25 +19,20 @@ agentic-operations/
     tech-stack-operations/
   docs/
     agent-map.md
-    public-sharing-notes.md
+    operating-boundaries.md
     repo-structure.md
 ```
 
 ## Why Categories Matter
 
-The original source separated agents by maturity:
-
-- first proof-of-concept agents
-- agents ready for testing
-
-That is useful internally, but less useful for an interview audience.
-
-This public repo groups agents by the business problem they solve. That makes it
-easier for a reader to scan the library and understand the operating system.
+Revenue operations work breaks down into repeatable control areas: data
+foundation, GTM motion, revenue execution, customer lifecycle, and systems
+control. The folder structure follows those areas so agents are easy to locate,
+combine, and extend.
 
 ## Folder Naming
 
-Folder names use simple, stable business language:
+Folder names use stable operating language:
 
 - `data-quality-crm-hygiene`
 - `marketing-operations`
@@ -46,5 +41,5 @@ Folder names use simple, stable business language:
 - `icp-market-strategy`
 - `enablement-operations`
 
-Inside each category, each agent keeps its original slug so the design history
-is still traceable.
+Inside each category, each agent keeps a stable slug so downstream references,
+documentation, and orchestration can point to the same unit of work over time.

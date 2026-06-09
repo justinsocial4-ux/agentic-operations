@@ -1,6 +1,6 @@
 # Agent Map
 
-This page is the simple inventory of the Agentic Operations library.
+This page maps the Agentic Operations control layer by business function.
 
 ## At A Glance
 
@@ -28,8 +28,8 @@ flowchart TD
 
 ## Data Quality And CRM Hygiene
 
-These agents clean the foundation. Bad CRM data creates bad routing, bad reports,
-bad forecasts, and wasted sales motion.
+These agents protect the data foundation. Bad CRM data creates bad routing, bad
+reports, bad forecasts, and wasted sales motion.
 
 | Agent | Plain-English job |
 |---|---|
