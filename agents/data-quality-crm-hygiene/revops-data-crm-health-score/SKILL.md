@@ -1,7 +1,16 @@
 ---
 name: revops-data-crm-health-score
-description: "Generates a unified health score for your CRM across six data quality dimensions (completeness, accuracy, duplicates, freshness, consistency, connectivity). Benchmarks against industry standards, tracks improvement over time, and delivers prioritized remediation recommendations. Trigger on: score my CRM data, check data health, CRM health score, data quality score, measure data quality, assess CRM health, what's my data quality, evaluate CRM data quality."
+description: "Generates a unified health score for your CRM across six data quality dimensions (completeness, accuracy, duplicates, freshness, consistency, connectivity). Benchmarks against industry standards, tracks improvement over time, and delivers prioritized remediation recommendations. Make sure to use this skill whenever the user asks to score CRM data, check CRM health, measure data quality, assess whether CRM data is trustworthy, compare data-quality benchmarks, or prioritize CRM cleanup—even if they do not name the agent."
 metadata:
+  trigger_phrases:
+    - "score my CRM data"
+    - "check data health"
+    - "CRM health score"
+    - "data quality score"
+    - "measure data quality"
+    - "assess CRM health"
+    - "what's my data quality"
+    - "evaluate CRM data quality"
   category: "Data Quality & Hygiene"
   phase: "Phase 2"
   data_readiness: "30_days"
@@ -9,18 +18,17 @@ metadata:
   author: "RevOps Agent Factory"
   last_updated: "2026-04-12"
   dependencies:
-    agents:
-      - "revops-data-deduplication (DQH-01)"
-      - "revops-data-field-normalization (DQH-02)"
-    mcps:
-      - "Salesforce MCP (Salesforce orgs)"
-      - "HubSpot MCP (HubSpot orgs)"
-      - "Snowflake MCP (optional; for engagement history)"
-    minimum_data:
-      - "Contact/Company object with Email, Phone, FirstName, LastName fields"
-      - "Account/Company object with Name, Industry fields"
-      - "Opportunity/Deal object with Amount, CloseDate, StageName, AccountId"
-      - "Activity records (Task, Event, EmailMessage) for freshness scoring (optional)"
+    - "revops-data-deduplication (DQH-01)"
+    - "revops-data-field-normalization (DQH-02)"
+  mcps:
+    - "Salesforce MCP (Salesforce orgs)"
+    - "HubSpot MCP (HubSpot orgs)"
+    - "Snowflake MCP (optional; for engagement history)"
+  minimum_data:
+    - "Contact/Company object with Email, Phone, FirstName, LastName fields"
+    - "Account/Company object with Name, Industry fields"
+    - "Opportunity/Deal object with Amount, CloseDate, StageName, AccountId"
+    - "Activity records (Task, Event, EmailMessage) for freshness scoring (optional)"
 ---
 
 # DQH-04 CRM Health Score Agent
@@ -66,6 +74,15 @@ metadata:
 ## What This Agent Does
 
 The CRM Health Score Agent is your data quality scorekeeper. It generates a single, unified health score (0–100) for your entire CRM by measuring six key dimensions: completeness (are core fields populated?), accuracy (are values correct?), duplicates (are there unwanted copies?), freshness (is data recent?), consistency (are formats and linkages valid?), and connectivity (are records properly linked?). Instead of running manual quarterly audits, you get a data health dashboard you can run weekly or on-demand. The agent benchmarks your scores against industry standards for RevOps teams, shows you exactly where data quality gaps exist, and prioritizes remediation actions with estimated effort and ROI impact.
+
+## How to Use the Bundled Resources
+
+- Read `references/health_score_benchmarks.md` when applying or citing the frozen pilot thresholds; it separates vendor-authored benchmark claims from pilot decisions.
+- Read `references/dimension_calculations.md` for detailed field definitions, fallbacks, and repeatable arithmetic.
+- Read `references/remediation_playbook.md` when turning the bottom three dimensions into prioritized actions.
+- Read `references/trend_tracking_examples.md` when storing snapshots or explaining multi-run trends.
+- Read `references/crm_tech_stack_notes.md` for Salesforce/HubSpot field mapping and connection-specific gotchas.
+- During live scoring, a detailed audit, or an exact-arithmetic request, use `scripts/crm_health_score.py` for deterministic threshold mapping, composite scoring, and trend calculations. For a simple planning-only or no-tools dry run, use the identical inline rules below and do not pause to read or run bundled files.
 
 ---
 
@@ -143,6 +160,8 @@ Next step: Running health score assessment...
 
 For each dimension, I'll measure specific metrics and convert to a 0–100 score. Weights are: Completeness 20%, Accuracy 15%, Duplicates 20%, Freshness 20%, Consistency 15%, Connectivity 10%.
 
+During live scoring or a detailed audit, use `python3 scripts/crm_health_score.py dimension --dimension <name> --raw <value>` for repeatable threshold mapping. For a simple no-tools explanation, apply the identical pilot bands below inline. The helper never fetches CRM data.
+
 **Dimension 1: Completeness (20% weight)**
 - Measures: % of core Contact fields populated (Email, Phone, FirstName, LastName, Title, Company, Industry)
 - Calculation: For each contact, count populated required fields / total required fields; aggregate to average %
@@ -216,6 +235,8 @@ Opportunity-to-Contact Linkage:
 
 Apply dimension weights and calculate overall score:
 
+During live scoring, a detailed audit, or an exact-arithmetic request, use `python3 scripts/crm_health_score.py composite --scores-json '<json>'` after all six dimension scores are available. For a simple no-tools explanation, use the same formula inline.
+
 ```
 Health Score = (Completeness × 0.20) + (Accuracy × 0.15) + (Duplicates × 0.20) 
              + (Freshness × 0.20) + (Consistency × 0.15) + (Connectivity × 0.10)
@@ -237,6 +258,8 @@ Health Score = (Completeness × 0.20) + (Accuracy × 0.15) + (Duplicates × 0.20
 **Minimum for trending:** At least 2 snapshots (runs) needed to calculate trends. I'll tell you when trending data becomes available.
 
 **Per-dimension trends:** I'll track which dimensions are improving and which are declining, and highlight the biggest movers.
+
+During live trend scoring, a detailed audit, or an exact-arithmetic request, use `python3 scripts/crm_health_score.py trend --current-json '<json>' --previous-json '<json>' --periods <n>` once at least two snapshots exist. For a simple no-tools explanation, use the same delta rules inline.
 
 **Example (if historical baseline exists):**
 ```
@@ -478,4 +501,3 @@ Expected combined impact: 76 → 85+ (EXCELLENT) within 4 weeks
 - `dimension_calculations.md` — Technical details on how each score is calculated
 - `trend_tracking_examples.md` — Real-world before/after assessments
 - `crm_tech_stack_notes.md` — Salesforce vs. HubSpot specific gotchas
-
