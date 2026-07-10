@@ -1,6 +1,6 @@
 ---
 name: revops-data-contact-decay
-description: "Identifies contacts in your CRM that have gone stale (no email opens, calls, meetings, or website visits for a configurable period) and routes them for archival, re-engagement campaigns, or data remediation. Tracks decay across multiple contact fields, assigns decay severity scores, and triggers workflows to clean up contact lists before stale data damages email sender reputation or inflates engagement metrics. Trigger on: find stale contacts, check contact decay, identify outdated records, clean up old contacts, detect bounced emails, flag decaying contacts, remediate stale contact data, archive inactive contacts."
+description: "Identifies contacts in your CRM that have gone stale (no email opens, calls, meetings, or website visits for a configurable period) and routes them for archival, re-engagement campaigns, or data remediation. Tracks decay across multiple contact fields, assigns decay severity scores, and triggers workflows to clean up contact lists before stale data damages email sender reputation or inflates engagement metrics. Make sure to use this skill whenever the user asks to find stale contacts, check contact decay, identify outdated records, clean up old contacts, detect bounced emails, flag decaying contacts, remediate stale contact data, or archive inactive contacts—even if they do not name the agent."
 metadata:
   category: "Data Quality & Hygiene"
   phase: "Phase 2"
@@ -9,19 +9,18 @@ metadata:
   author: "RevOps Agent Factory"
   last_updated: "2026-04-12"
   dependencies:
-    agents:
-      - "revops-data-field-normalization"
-    mcps:
-      - "Salesforce MCP (Salesforce orgs)"
-      - "HubSpot MCP (HubSpot orgs)"
-      - "Outreach MCP (email engagement data)"
-      - "SalesLoft MCP (email engagement data)"
-      - "Gong MCP (call engagement data)"
-    minimum_data:
-      - "Contact object with Email, Phone, Title, Company, Last_Activity_Date fields"
-      - "Lead object (Salesforce) or equivalent (HubSpot)"
-      - "Account/Company object for company-level linking"
-      - "30+ days of engagement history (Task, Event, or email platform records)"
+    - "revops-data-field-normalization"
+  mcps:
+    - "Salesforce MCP (Salesforce orgs)"
+    - "HubSpot MCP (HubSpot orgs)"
+    - "Outreach MCP (email engagement data)"
+    - "SalesLoft MCP (email engagement data)"
+    - "Gong MCP (call engagement data)"
+  minimum_data:
+    - "Contact object with Email, Phone, Title, Company, Last_Activity_Date fields"
+    - "Lead object (Salesforce) or equivalent (HubSpot)"
+    - "Account/Company object for company-level linking"
+    - "30+ days of engagement history (Task, Event, or email platform records)"
 ---
 
 # DQH-03 Contact Decay Detection & Remediation
@@ -58,6 +57,16 @@ metadata:
 ## What This Agent Does
 
 The Contact Decay Detection & Remediation agent is your CRM's stale contact detective. It scans your contact and lead database to identify records that haven't engaged (email opens, calls, meetings, website visits) in a defined period. Using multi-field decay detection, it scores each contact on a 0–100 severity scale, classifies them into tiers (Active, Decaying, Stale, Archived Candidate), and routes them automatically to re-engagement campaigns, data enrichment, or archival workflows. Unlike quarterly manual cleanups, this agent runs continuously and integrates directly with your CRM and email platform to detect engagement decay in real-time and propose actions with confidence scores.
+
+For live scoring, detailed audits, bulk-decision preparation, or exact-arithmetic requests, use `scripts/contact_decay_rules.py`. For a simple planning-only or no-tools explanation, use the identical inline weights, tiers, and approval rules below.
+
+Load bundled references only when the task needs their detail:
+- Read `references/decay_scoring_guide.md` for formula interpretation, exact weights, tier boundaries, or score QA.
+- Read `references/field_decay_signals.md` when converting raw activity and data-quality evidence into the five signal scores.
+- Read `references/remediation_workflows.md` before preparing live tasks, enrichment jobs, reassessment, or archival review.
+- Read `references/decay_thresholds_by_segment.md` when the user wants to customize defaults by sales cycle or segment.
+- Read `references/enrichment_vendor_guide.md` before choosing or invoking an enrichment source.
+- Read `references/archival_playbook.md` before any archival plan or execution; explicit approval remains mandatory.
 
 ---
 
@@ -423,12 +432,4 @@ Generating report...
 
 ## References & Further Reading
 
-**Decay detection algorithm details:**
-- `references/decay_scoring_guide.md` — Weighted formula, signal calculations, threshold justification
-- `references/field_decay_signals.md` — Email, phone, title, company decay scoring rules
-- `references/remediation_workflows.md` — Task creation, enrichment routing, archival checklists
-
-**Thresholds & customization:**
-- `references/decay_thresholds_by_segment.md` — Industry-specific decay thresholds (SMB vs. enterprise, SaaS vs. services)
-- `references/enrichment_vendor_guide.md` — ZoomInfo, Clay, Apollo integration and cost estimates
-- `references/archival_playbook.md` — Soft-delete vs. archival account; GDPR/CCPA compliance notes
+These six files are routed near the top of this skill. They preserve the frozen pilot defaults, identify assumptions that need customer validation, and separate detailed operating guidance from the main workflow.
