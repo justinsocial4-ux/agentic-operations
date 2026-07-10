@@ -5,6 +5,6 @@ working, and how large the opportunity is.
 
 | Agent | What it does |
 |---|---|
-| [ICP Development Agent](revops-icp-development/SKILL.md) | Builds an ideal customer profile from won/lost deal patterns. |
+| [ICP Development Agent](revops-icp-development/SKILL.md) | Reviews frozen won/lost cohorts and turns segment differences into prospective validation hypotheses. |
 | [Segment Performance Agent](revops-segment-performance/SKILL.md) | Compares revenue performance across customer segments. |
 | [TAM/SAM Sizing Agent](revops-tam-sam-sizing/SKILL.md) | Estimates market size and reachable opportunity by segment. |
