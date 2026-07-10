@@ -1,6 +1,6 @@
 ---
 name: revops-data-deduplication
-description: "Finds and merges duplicate contact, lead, and account records in Salesforce or HubSpot using fuzzy-matching algorithms. Identifies near-duplicates that exact-match rules miss, scores match confidence, prevents duplicate outreach, and reduces pipeline inflation. Trigger on: find duplicate contacts, deduplicate my CRM, identify duplicate records, merge duplicate contacts, check for duplicates, find duplicate leads, deduplicate contacts and leads, clean up duplicate records."
+description: "Finds and merges duplicate contact, lead, and account records in Salesforce or HubSpot using fuzzy-matching algorithms. Identifies near-duplicates that exact-match rules miss, scores match confidence, prevents duplicate outreach, and reduces pipeline inflation. Make sure to use this skill whenever the user asks to find duplicate contacts, deduplicate a CRM, identify duplicate records, merge duplicate contacts, check for duplicates, find duplicate leads, deduplicate contacts and leads, or clean up duplicate records—even if they do not name the agent."
 metadata:
   category: "Data Quality & Hygiene"
   phase: "Phase 1"
@@ -8,15 +8,14 @@ metadata:
   version: "1.0"
   author: "RevOps Agent Factory"
   last_updated: "2026-04-12"
-  dependencies:
-    agents: []
-    mcps:
-      - "Salesforce MCP (Salesforce orgs)"
-      - "HubSpot MCP (HubSpot orgs)"
-    minimum_data:
-      - "Contact object with Email, Phone, FirstName, LastName fields"
-      - "Lead object (Salesforce) or equivalent (HubSpot)"
-      - "Account/Company object for company-level deduplication"
+  dependencies: []
+  mcps:
+    - "Salesforce MCP (Salesforce orgs)"
+    - "HubSpot MCP (HubSpot orgs)"
+  minimum_data:
+    - "Contact object with Email, Phone, FirstName, LastName fields"
+    - "Lead object (Salesforce) or equivalent (HubSpot)"
+    - "Account/Company object for company-level deduplication"
 ---
 
 # DQH-01 Deduplication Engine
@@ -53,6 +52,14 @@ metadata:
 ## What This Agent Does
 
 The Deduplication Engine is your CRM's duplicate detective and cleanup crew. It scans your contact, lead, and account databases to find records that represent the same person or company—even when names, emails, or phone numbers are slightly different. Using fuzzy-matching algorithms (Jaro-Winkler for names, Metaphone for phonetic variants), it scores each potential match on a 0–100 confidence scale, ranks them by likelihood, and proposes intelligent merges while flagging risky ones for manual review. You get a detailed report showing which records will merge, what data will be preserved or lost, and exactly why each merge is safe or risky.
+
+## How to Use the Bundled Resources
+
+- Read `references/nickname_mapping.md` when normalizing common first-name variants before fuzzy comparison.
+- Read `references/company_variants.md` when normalizing company suffixes and common legal-name variants.
+- Read `references/international_characters.md` when handling accents, transliteration, or non-Latin names.
+- Read `references/merge_scenarios.md` before reviewing parent/child accounts, career changes, shared inboxes, or other ambiguous merges.
+- During live scoring, master selection, a detailed audit, or an exact-arithmetic request, use `scripts/deduplication_rules.py`. For a simple planning-only or no-tools explanation, use the identical inline formula, tiers, and decision priority below.
 
 ---
 
@@ -435,4 +442,3 @@ Determining master records...
 - `company_variants.md` — Common company name variants (Inc., Ltd., Corp., etc.)
 - `international_characters.md` — Handling non-Latin names and accents
 - `merge_scenarios.md` — Real-world examples of tricky merges (parent/child accounts, career changers, etc.)
-
