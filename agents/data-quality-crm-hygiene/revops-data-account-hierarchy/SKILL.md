@@ -1,7 +1,16 @@
 ---
 name: revops-data-account-hierarchy
-description: "Maps subsidiary companies, divisions, and regional offices to their parent accounts, creating a unified tree structure of corporate family relationships. Detects parent-child links using D-U-N-S matching, email domain analysis, fuzzy company name matching, and manual overrides. Constructs clean hierarchies, detects circular references, flags orphaned accounts, and enables consolidated revenue reporting for account families. Trigger on: build account hierarchy, map parent child accounts, organize account structure, fix account relationships, identify subsidiaries, account hierarchy, parent company mapping, create account family structure."
+description: "Maps subsidiary companies, divisions, and regional offices to their parent accounts, creating a unified tree structure of corporate family relationships. Detects parent-child links using D-U-N-S matching, email domain analysis, fuzzy company name matching, and manual overrides. Constructs clean hierarchies, detects circular references, flags orphaned accounts, and enables consolidated revenue reporting for account families. Make sure to use this skill whenever the user asks to build or repair an account hierarchy, map parent-child companies, identify subsidiaries or ultimate parents, resolve account-family relationships, detect hierarchy cycles, or consolidate family-level reporting—even if they do not name the agent."
 metadata:
+  trigger_phrases:
+    - "build account hierarchy"
+    - "map parent child accounts"
+    - "organize account structure"
+    - "fix account relationships"
+    - "identify subsidiaries"
+    - "account hierarchy"
+    - "parent company mapping"
+    - "create account family structure"
   category: "Data Quality & Hygiene"
   phase: "Phase 1"
   data_readiness: "day_1"
@@ -9,16 +18,15 @@ metadata:
   author: "RevOps Agent Factory"
   last_updated: "2026-04-12"
   dependencies:
-    agents:
-      - "revops-data-deduplication (hard dependency: run first)"
-      - "revops-data-field-normalization (soft dependency: improves accuracy of name matching; not required)"
-    mcps:
-      - "Salesforce MCP (for Salesforce orgs)"
-      - "HubSpot MCP (for HubSpot orgs)"
-    minimum_data:
-      - "Account object with Id, Name, Website fields"
-      - "ParentAccountId field (Salesforce) or Parent Company field (HubSpot)"
-      - "Contact records with email addresses (recommended, for email domain matching)"
+    - "revops-data-deduplication (hard dependency: run first)"
+    - "revops-data-field-normalization (soft dependency: improves accuracy of name matching; not required)"
+  mcps:
+    - "Salesforce MCP (for Salesforce orgs)"
+    - "HubSpot MCP (for HubSpot orgs)"
+  minimum_data:
+    - "Account object with Id, Name, Website fields"
+    - "ParentAccountId field (Salesforce) or Parent Company field (HubSpot)"
+    - "Contact records with email addresses (recommended, for email domain matching)"
 ---
 
 # DQH-06 Account Hierarchy Engine
@@ -54,6 +62,15 @@ metadata:
 ## What This Agent Does
 
 The Account Hierarchy Engine is your account structure detective. It scans your account database to find parent-child relationships using six signals: D-U-N-S matching (highest confidence), email domain analysis (subsidiary employees use parent's email), fuzzy company name matching (Jaro-Winkler for "GE" vs "General Electric"), website domain matching, subsidiary pattern recognition, and manual overrides. For each candidate pair, it calculates a confidence score (0–100), detects and flags circular references and orphaned accounts, constructs clean multi-level hierarchies, and generates a detailed report showing which accounts will be linked, why, and what risks exist. You get a unified account family tree that enables consolidated revenue reporting, accurate territory assignment, and cross-sell visibility—all without expensive third-party data enrichment.
+
+## How to Use the Bundled Resources
+
+- Read `references/company_name_variants.md` before detailed name matching or tuning fuzzy-match behavior.
+- Read `references/international_subsidiaries.md` before mapping cross-border, regional, or legal-entity structures.
+- Read `references/circular_reference_examples.md` when auditing a proposed chain or resolving a detected loop.
+- Read `references/orphan_remediation_guide.md` when producing the orphan checklist and next actions.
+- Read `references/evidence_and_limitations.md` when citing market claims or explaining the pilot model's known evidence and formula limits.
+- During live scoring, a detailed audit, or an exact-algorithm request, use `scripts/account_hierarchy.py`. For a simple planning-only or no-tools dry run, use the identical inline rules below and do not pause to read or run bundled files.
 
 ---
 
@@ -161,6 +178,8 @@ I'll use six matching signals to find parent-child relationships:
 
 For each candidate pair, I calculate confidence using weighted formula:
 
+During live scoring, a detailed audit, or an exact-algorithm request, use `python3 scripts/account_hierarchy.py score ...`. For a simple no-tools explanation, apply the same formula inline.
+
 ```
 Confidence = (
   email_signal × 0.30 +
@@ -170,6 +189,10 @@ Confidence = (
   false_positive_adjustments
 ) × 100
 ```
+
+**Frozen pilot caveat:** The displayed weights total 1.05, and missing signals are not renormalized. Preserve the literal formula, cap displayed confidence at 100, and disclose this limitation instead of silently repairing it.
+
+Recalculate the full literal formula before claiming that added evidence crosses a tier. In the Acme dry-run example, adding only an email signal of 0.90 changes 32.2% to 59.2%, which remains below 70%; do not describe it as an 85%+ match.
 
 **Confidence tiers:**
 - ≥95% → Auto-link (pending your approval)
@@ -182,6 +205,8 @@ Confidence = (
 I'll trace ancestry chains for each proposed linkage. If Child → Parent → Grandparent → ... → loops back to Child, I'll flag as CIRCULAR and stop before linking.
 
 **Detection method:** Depth-first search on parent chain; reject any cycle or chain >10 levels deep.
+
+During live validation or a detailed audit, use `python3 scripts/account_hierarchy.py cycle ...`; simple explanations may apply the same depth-first rule inline.
 
 ### Phase 5: Build Hierarchy Tree
 
@@ -374,6 +399,7 @@ Building hierarchies...
 - `international_subsidiaries.md` — Guidance on mapping cross-border hierarchies
 - `circular_reference_examples.md` — Real-world examples of loops and how to resolve them
 - `orphan_remediation_guide.md` — Checklist for fixing accounts with missing parents
+- `evidence_and_limitations.md` — Live-checked source support, vendor-bias caveats, and frozen formula limitations
 
 ---
 
