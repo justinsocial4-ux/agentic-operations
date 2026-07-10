@@ -21,6 +21,10 @@ agentic-operations/
     agent-map.md
     operating-boundaries.md
     repo-structure.md
+  tools/
+    skill-packager/
+      package_skill.py
+      tests/
 ```
 
 ## Why Categories Matter
@@ -43,3 +47,7 @@ Folder names use stable operating language:
 
 Inside each category, each agent keeps a stable slug so downstream references,
 documentation, and orchestration can point to the same unit of work over time.
+
+## Packaging Tool
+
+`tools/skill-packager/` builds verified `.skill` archives. It recursively keeps references, scripts, and other bundled resources instead of packaging only `SKILL.md`.
