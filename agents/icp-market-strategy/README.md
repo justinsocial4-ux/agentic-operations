@@ -9,4 +9,4 @@ working, and how large the opportunity is.
 | [ABM Account Selection Agent](revops-abm-account-selection/SKILL.md) | Builds an exact, read-only selection preview from approved eligibility, score, segment-slot, and boundary-tie evidence. |
 | [ICP Development Agent](revops-icp-development/SKILL.md) | Reviews frozen won/lost cohorts and turns segment differences into prospective validation hypotheses. |
 | [Segment Performance Agent](revops-segment-performance/SKILL.md) | Compares revenue performance across customer segments. |
-| [TAM/SAM Sizing Agent](revops-tam-sam-sizing/SKILL.md) | Estimates market size and reachable opportunity by segment. |
+| [TAM/SAM Sizing Agent](revops-tam-sam-sizing/SKILL.md) | Validates supplied market-size scenarios with exact source units, price bases, overlap evidence, and no ranking or GTM action. |
