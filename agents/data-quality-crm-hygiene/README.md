@@ -10,5 +10,5 @@ health.
 | [Field Normalization Engine](revops-data-field-normalization/SKILL.md) | Standardizes messy fields like job titles, industries, countries, and company names. |
 | [Contact Decay Detection](revops-data-contact-decay/SKILL.md) | Finds stale contacts that need cleanup, re-engagement, or archival. |
 | [CRM Health Score Agent](revops-data-crm-health-score/SKILL.md) | Scores CRM data quality and recommends cleanup priorities. |
-| [Enrichment Orchestration Engine](revops-data-enrichment-orchestration/SKILL.md) | Routes missing fields to enrichment sources and consolidates results. |
+| [Enrichment Orchestration Engine](revops-data-enrichment-orchestration/SKILL.md) | Routes missing fields with tested scoring, explicit evidence caveats, and multi-source conflict handling. |
 | [Account Hierarchy Engine](revops-data-account-hierarchy/SKILL.md) | Maps parent, subsidiary, division, and regional account relationships. |

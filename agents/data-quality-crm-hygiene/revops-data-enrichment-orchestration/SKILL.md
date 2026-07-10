@@ -1,6 +1,6 @@
 ---
 name: revops-data-enrichment-orchestration
-description: "Routes B2B contact and account records to optimal enrichment providers (ZoomInfo, Apollo, Clearbit, Cleanlist, Cognism) based on missing fields and cost/accuracy trade-offs. Orchestrates multi-source enrichment, consolidates conflicting data, and writes verified results back to CRM with source attribution and confidence scores. Trigger on: enrich my contacts, fill missing data, enrich CRM records, data enrichment, find missing emails, find missing phone numbers, enrich leads, route to enrichment, optimize enrichment, multi-source enrichment."
+description: "Routes B2B contact and account records to optimal enrichment providers (ZoomInfo, Apollo, Clearbit, Cleanlist, Cognism) based on missing fields and cost/accuracy trade-offs. Orchestrates multi-source enrichment, consolidates conflicting data, and writes verified results back to CRM with source attribution and confidence scores. Make sure to use this skill whenever the user asks to enrich contacts or CRM records, fill missing emails or phone numbers, route between enrichment providers, optimize enrichment cost or accuracy, or consolidate multi-source data—even if they do not name the agent."
 metadata:
   trigger_phrases:
     - "enrich my contacts"
@@ -20,20 +20,19 @@ metadata:
   author: "RevOps Agent Factory"
   last_updated: "2026-04-12"
   dependencies:
-    agents:
-      - "revops-data-deduplication"
-      - "revops-data-field-normalization"
-    mcps:
-      - "Salesforce MCP (Salesforce orgs) or HubSpot MCP (HubSpot orgs)"
-      - "ZoomInfo API (optional)"
-      - "Apollo API (optional)"
-      - "Clearbit API (optional)"
-      - "Cleanlist API (optional)"
-      - "Cognism API (optional)"
-    minimum_data:
-      - "Contact or Lead object with FirstName, LastName, Email, Phone (at least one identifier)"
-      - "Account/Company object for company-level enrichment"
-      - "At least one enrichment provider integration or API key"
+    - "revops-data-deduplication"
+    - "revops-data-field-normalization"
+  mcps:
+    - "Salesforce MCP (Salesforce orgs) or HubSpot MCP (HubSpot orgs)"
+    - "ZoomInfo API (optional)"
+    - "Apollo API (optional)"
+    - "Clearbit API (optional)"
+    - "Cleanlist API (optional)"
+    - "Cognism API (optional)"
+  minimum_data:
+    - "Contact or Lead object with FirstName, LastName, Email, Phone (at least one identifier)"
+    - "Account/Company object for company-level enrichment"
+    - "At least one enrichment provider integration or API key"
 ---
 
 # DQH-05 Enrichment Orchestration Engine
@@ -125,6 +124,16 @@ Once enrichment is complete, the agent consolidates conflicting data from multip
 
 ---
 
+## Bundled Resources
+
+- Read `references/evidence_and_provider_defaults.md` when the user asks for citations or current benchmarks, and before using provider defaults in a live plan. For a simple dry run, label the inline figures as frozen pilot assumptions.
+- Read `references/routing_rules.md` before executing a live batch or auditing the exact calculations. A simple explanation may use the identical rules already shown below.
+- Read `references/crm_field_and_output_contract.md` before live field mapping or any Salesforce or HubSpot write-back.
+- Read `references/end_to_end_example.md` when the user asks for a full sample run.
+- Run `python3 scripts/enrichment_router.py --help` for deterministic scoring, routing, conflict ranking, and confidence classification. The script implements the unchanged pilot rules documented below.
+
+---
+
 ## Getting Started (Preflight Check)
 
 When you trigger this agent, I'll verify your CRM connection, confirm enrichment provider access, validate data readiness, and scope your enrichment run.
@@ -192,6 +201,7 @@ Ready to proceed? [Yes / Adjust scope]
 
 **What I'll do:**
 - Query Contact and Lead objects from CRM (batches of 1,000)
+- Use `scripts/enrichment_router.py score` when calculating scores from record-level missing fields so the pilot weights stay exact.
 - For each record, calculate a "Missing Field Score" (0–100):
   - Email missing: +40 points
   - Phone missing: +30 points
@@ -228,6 +238,8 @@ Ready to proceed? [Yes / Adjust scope]
   - Cognism: ~$0.30 per record
 
 **Routing Decision Tree:**
+Use `scripts/enrichment_router.py route` to apply this same decision tree deterministically when routing a batch.
+
 For each record, apply waterfall logic:
 1. **High missing score (>70) + strict accuracy requirement?** → Cleanlist (highest verified accuracy, costs more)
 2. **High missing score + cost-sensitive?** → Apollo (good accuracy, lower cost)
@@ -264,6 +276,7 @@ COST SUBTOTAL: $0.99 per record cohort
 
 **What I'll do:**
 - Collect results from all providers for each record
+- Use `scripts/enrichment_router.py resolve` when provider responses conflict; it applies the unchanged priority order below.
 - If single provider returned data → use it directly
 - If multiple providers returned data for same field:
   - **Exact match** (both say email = person@example.com) → Use without flagging
@@ -443,92 +456,9 @@ After enrichment is complete:
 
 ---
 
-## Example: End-to-End Enrichment Session
+## Worked Example
 
-**You:** "Enrich our contacts with missing emails and phone numbers. Use whatever providers we have."
-
-**Me (Preflight):**
-```
-✓ Salesforce connected (Org: EXAMPLE_ORG_ID)
-✓ Enrichment providers: ZoomInfo, Apollo, Clearbit active
-⚠️ Cleanlist not connected (would improve email accuracy from 82% to 98%)
-✓ Budget available: ZoomInfo $1,200, Apollo $1,500, Clearbit $600
-✓ Contact records: 12,500 total | 3,100 missing email | 2,400 missing phone
-✓ Lead records: 4,200 total | 1,200 missing email | 900 missing phone
-✓ Total enrichment candidates: 7,600 records
-
-Estimated cost: ~$4,500 (multi-source waterfall)
-Ready to begin? [Yes / Adjust]
-```
-
-**You:** "Go ahead. Prioritize email, and let me know if costs spike."
-
-**Me (Analysis & Routing):**
-```
-Assessing 7,600 records for missing fields...
-✓ Missing field scores calculated (0–100)
-  - 2,100 HIGH priority (>70)
-  - 3,200 MEDIUM priority (50–70)
-  - 2,300 LOW priority (<50)
-
-Mapping provider capabilities...
-✓ HIGH priority records → Cleanlist if budget allows, else Apollo
-✓ MEDIUM priority → Apollo / Clearbit
-✓ LOW priority → Cheapest available (Cognism or Apollo)
-
-Executing enrichment calls...
-✓ Batch 1: 1,000 records to ZoomInfo — COMPLETE (Cost: $520)
-✓ Batch 2: 1,500 records to Apollo — COMPLETE (Cost: $180)
-✓ Batch 3: 1,200 records to Clearbit — COMPLETE (Cost: $300)
-[... continuing batches ...]
-
-Running total: $4,200 of $4,500 budget (93% used)
-
-Consolidating results...
-✓ 6,800 records enriched successfully
-✓ 400 records "not found" by any provider
-✓ 400 records enriched with partial data (phone but not email)
-
-Conflict resolution:
-✓ 340 email conflicts detected → Resolved using provider accuracy hierarchy
-✓ Average confidence score: 89%
-
-Writing back to CRM...
-✓ 6,800 records updated with enriched email/phone
-✓ Confidence scores and sources logged
-```
-
-**Final Report:**
-```
-ENRICHMENT COMPLETE
-
-Records processed: 7,600
-Records successfully enriched: 6,800 (89%)
-Records partially enriched: 400 (5%)
-Records not found: 400 (5%)
-
-COVERAGE IMPROVEMENTS
-Email: 9,400 → 13,100 records (78% → 82%) | +3,700 records | Cost: $2,200
-Phone: 10,100 → 12,200 records (81% → 87%) | +2,100 records | Cost: $1,800
-
-COST SUMMARY
-ZoomInfo: $1,850 (41%)
-Apollo: $1,400 (31%)
-Clearbit: $1,200 (27%)
-TOTAL: $4,450 (vs. budget $4,500)
-
-CONFIDENCE METRICS
-Average confidence: 89%
-Email fields >90% confidence: 92%
-Phone fields >90% confidence: 85%
-
-NEXT STEPS
-1. Monitor email deliverability over next 7 days (should improve from 82% to 95%+)
-2. Identify which enriched accounts have highest revenue potential (use health score next)
-3. Schedule re-enrichment in 30 days (data decay cycle)
-
-Full report: [link to detailed breakdown by provider, field, confidence tier]
-```
+Read `references/end_to_end_example.md` when you need the pilot's complete preflight → routing → consolidation → CRM write-back → final-report walkthrough. The example is moved out of this file for progressive disclosure; its decisions and outputs are unchanged.
 
 ---
 
@@ -536,9 +466,10 @@ Full report: [link to detailed breakdown by provider, field, confidence tier]
 
 **Research & Data Sources:**
 - Research brief: DQH-05_enrichment_orchestration_research_v2.5.md
-- Provider accuracy benchmarks: Cleanlist 2026 B2B Data Enrichment Comparison
-- Cost analysis based on published provider pricing (as of April 2026)
-- Note: Research showed 100% single-domain source concentration for provider accuracy data—flagged for validation in future iterations with multi-source enrichment provider comparisons
+- Provider evidence and limitations: `references/evidence_and_provider_defaults.md`
+- Routing matrix and confidence rules: `references/routing_rules.md`
+- CRM mappings and output contract: `references/crm_field_and_output_contract.md`
+- Note: The pilot's provider benchmarks came from a single commercial vendor. Treat them as defaults to validate on customer data, not independent current facts.
 
 **Known Limitations:**
 - Enrichment accuracy varies by industry and geography (North America data most robust)
