@@ -51,7 +51,7 @@ reports, bad forecasts, and wasted sales motion.
 
 | Agent | Plain-English job |
 |---|---|
-| [Customer Retention Risk Agent](../agents/customer-success-operations/revops-customer-retention-risk/SKILL.md) | Flags accounts likely to churn or fail renewal. |
+| [Customer Retention Risk Agent](../agents/customer-success-operations/revops-customer-retention-risk/SKILL.md) | Reviews separate customer evidence lanes against approved rules without predicting churn or taking action. |
 | [QBR Prep Agent](../agents/customer-success-operations/revops-qbr-prep/SKILL.md) | Prepares account review materials from CRM, product, and support signals. |
 
 ## Tech Stack Operations

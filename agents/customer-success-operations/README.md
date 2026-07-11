@@ -5,5 +5,5 @@ conversations.
 
 | Agent | What it does |
 |---|---|
-| [Customer Retention Risk Agent](revops-customer-retention-risk/SKILL.md) | Scores churn and renewal risk across customer accounts. |
+| [Customer Retention Risk Agent](revops-customer-retention-risk/SKILL.md) | Reviews separate customer evidence lanes against approved rules without predicting churn or taking action. |
 | [QBR Prep Agent](revops-qbr-prep/SKILL.md) | Builds QBR materials from account health, product usage, support, and CRM data. |
