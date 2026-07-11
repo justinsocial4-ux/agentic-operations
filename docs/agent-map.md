@@ -79,6 +79,12 @@ reports, bad forecasts, and wasted sales motion.
 | [Certification Tracking Agent](../agents/enablement-operations/revops-certification-tracking/SKILL.md) | Tracks required training and escalates overdue certifications. |
 | [Coaching Recommendation Agent](../agents/enablement-operations/revops-coaching-recommendation/SKILL.md) | Turns call insights and performance data into coaching recommendations. |
 
+## Pricing And Deal Strategy
+
+| Agent | Plain-English job |
+|---|---|
+| [CPQ Assist Agent](../agents/pricing-deal-strategy/revops-cpq-assist/SKILL.md) | Reviews exact quote, catalog, pricing-rule, and approval-process evidence without recommending products or taking action. |
+
 ## Other Focused Agents
 
 | Category | Agent | Plain-English job |
