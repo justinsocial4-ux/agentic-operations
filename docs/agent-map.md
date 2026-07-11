@@ -86,6 +86,13 @@ reports, bad forecasts, and wasted sales motion.
 | [CPQ Assist Agent](../agents/pricing-deal-strategy/revops-cpq-assist/SKILL.md) | Reviews exact quote, catalog, pricing-rule, and approval-process evidence without recommending products or taking action. |
 | [Competitive Price Evidence Review](../agents/pricing-deal-strategy/revops-competitive-pricing/SKILL.md) | Calculates exact same-basis price differences without recommending prices, discounts, negotiations, alerts, or CRM actions. |
 
+## Capacity And Planning
+
+| Agent | Plain-English job |
+|---|---|
+| [Territory Scenario Evidence Review](../agents/capacity-planning/revops-territory-design/SKILL.md) | Validates complete territory scenarios without ranking or implementing assignments. |
+| [Revenue Capacity Scenario Review](../agents/capacity-planning/revops-revenue-capacity-planning/SKILL.md) | Shows anonymous revenue-capacity scenario arithmetic without making staffing, budget, quota, territory, or worker decisions. |
+
 ## Other Focused Agents
 
 | Category | Agent | Plain-English job |
