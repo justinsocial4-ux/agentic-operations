@@ -84,6 +84,7 @@ reports, bad forecasts, and wasted sales motion.
 | Agent | Plain-English job |
 |---|---|
 | [CPQ Assist Agent](../agents/pricing-deal-strategy/revops-cpq-assist/SKILL.md) | Reviews exact quote, catalog, pricing-rule, and approval-process evidence without recommending products or taking action. |
+| [Competitive Price Evidence Review](../agents/pricing-deal-strategy/revops-competitive-pricing/SKILL.md) | Calculates exact same-basis price differences without recommending prices, discounts, negotiations, alerts, or CRM actions. |
 
 ## Other Focused Agents
 
