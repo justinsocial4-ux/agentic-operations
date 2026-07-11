@@ -103,3 +103,4 @@ reports, bad forecasts, and wasted sales motion.
 | Outbound Orchestration | [ICP List Building Agent](../agents/outbound-orchestration/revops-icp-list-building/SKILL.md) | Builds prospect lists from ICP criteria. |
 | Event Marketing | [Event Selection Agent](../agents/event-marketing/revops-event-selection/SKILL.md) | Scores which events are worth attending or sponsoring. |
 | Reporting and Analytics | [ELT Pipeline Monitoring Agent](../agents/reporting-analytics/revops-elt-pipeline-monitoring/SKILL.md) | Watches data pipelines for stale data, failures, and schema drift. |
+| Reporting and Analytics | [Anonymous Rep-Evidence Review](../agents/reporting-analytics/revops-rep-performance/SKILL.md) | Reviews approved anonymous sales-team aggregates without identifying, ranking, coaching, or acting on workers. |
