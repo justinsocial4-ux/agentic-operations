@@ -90,6 +90,7 @@ reports, bad forecasts, and wasted sales motion.
 | Category | Agent | Plain-English job |
 |---|---|---|
 | Revenue Intelligence | [Call Analysis Agent](../agents/revenue-intelligence/revops-call-analysis/SKILL.md) | Extracts objections, competitors, next steps, and deal risk from sales calls. |
+| Revenue Intelligence | [Competitive Win/Loss Evidence Review](../agents/revenue-intelligence/revops-competitive-winloss/SKILL.md) | Reviews separate source-bound outcome, competitor, reason, interview, annotation, and public-observation evidence without causal or strategic action. |
 | Lead Management | [MQL Qualification Agent](../agents/lead-management/revops-mql-qualification/SKILL.md) | Scores and classifies marketing-qualified leads. |
 | Outbound Orchestration | [ICP List Building Agent](../agents/outbound-orchestration/revops-icp-list-building/SKILL.md) | Builds prospect lists from ICP criteria. |
 | Event Marketing | [Event Selection Agent](../agents/event-marketing/revops-event-selection/SKILL.md) | Scores which events are worth attending or sponsoring. |
