@@ -92,6 +92,7 @@ reports, bad forecasts, and wasted sales motion.
 |---|---|
 | [Territory Scenario Evidence Review](../agents/capacity-planning/revops-territory-design/SKILL.md) | Validates complete territory scenarios without ranking or implementing assignments. |
 | [Revenue Capacity Scenario Review](../agents/capacity-planning/revops-revenue-capacity-planning/SKILL.md) | Shows anonymous revenue-capacity scenario arithmetic without making staffing, budget, quota, territory, or worker decisions. |
+| [Quota Scenario Evidence Review](../agents/capacity-planning/revops-quota-setting/SKILL.md) | Shows exact customer-authored anonymous quota-plan arithmetic without choosing quotas or making compensation, territory, account, worker, customer, or CRM decisions. |
 
 ## Other Focused Agents
 
