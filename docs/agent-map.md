@@ -76,7 +76,7 @@ reports, bad forecasts, and wasted sales motion.
 | Agent | Plain-English job |
 |---|---|
 | [New Hire Readiness Agent](../agents/enablement-operations/revops-new-hire-readiness/SKILL.md) | Tracks onboarding and ramp progress. |
-| [Certification Tracking Agent](../agents/enablement-operations/revops-certification-tracking/SKILL.md) | Tracks required training and escalates overdue certifications. |
+| [Certification Tracking Agent](../agents/enablement-operations/revops-certification-tracking/SKILL.md) | Reviews pseudonymous certification-assignment evidence under exact customer-authored rules; takes no action. |
 | [Coaching Record Evidence Review](../agents/enablement-operations/revops-coaching-recommendation/SKILL.md) | Reviews pseudonymous customer-authored coaching records and their governance evidence without generating coaching or judging workers. |
 
 ## Pricing And Deal Strategy
