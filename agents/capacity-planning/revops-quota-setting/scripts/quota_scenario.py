@@ -37,6 +37,8 @@ REQUIRED_PROHIBITIONS = {
 }
 ROUNDING = {"half_even": ROUND_HALF_EVEN, "down": ROUND_DOWN}
 ID_RE = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
+OPAQUE_TERRITORY_RE = re.compile(r"^territory-[0-9a-f]{32}$")
+OPAQUE_RECEIPT_RE = re.compile(r"^receipt-[0-9a-f]{32}$")
 TOKEN_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_.:/-]*$")
 DECIMAL_RE = re.compile(r"^(?:0|[1-9][0-9]*)(?:\.[0-9]+)?$")
 CURRENCY_RE = re.compile(r"^[A-Z]{3}$")
@@ -70,10 +72,9 @@ def _id(value: Any, label: str) -> str:
 
 
 def _anonymous_id(value: Any, label: str) -> str:
-    result = _id(value, label)
-    if not result.startswith("anonymous-"):
-        raise ValueError(f"{label} must begin with anonymous-")
-    return result
+    if not isinstance(value, str) or not OPAQUE_TERRITORY_RE.fullmatch(value):
+        raise ValueError(f"{label} must be territory- followed by 32 lowercase hexadecimal characters")
+    return value
 
 
 def _token(value: Any, label: str) -> str:
@@ -147,7 +148,7 @@ def _policy(raw: Any) -> tuple[dict[str, Any], dict[tuple[str, str], dict[str, A
         {
             "policy_id", "policy_version", "owner_role_id", "human_reviewer_role_id",
             "effective_at", "expires_at", "cutoff_at", "timezone", "approved_purpose",
-            "prohibited_uses", "correction_path", "appeal_path", "privacy_review_receipt_id",
+            "prohibited_uses", "correction_path_id", "appeal_path_id", "privacy_review_receipt_id",
             "workforce_review_receipt_id", "compensation_review_receipt_id",
             "affected_worker_notice_receipt_id", "calculation_policy", "source_bindings",
         },
@@ -233,8 +234,8 @@ def _policy(raw: Any) -> tuple[dict[str, Any], dict[tuple[str, str], dict[str, A
         "timezone": timezone_name,
         "approved_purpose": PURPOSE,
         "prohibited_uses": sorted(prohibited),
-        "correction_path": _text(row["correction_path"], "policy.correction_path"),
-        "appeal_path": _text(row["appeal_path"], "policy.appeal_path"),
+        "correction_path_id": _id(row["correction_path_id"], "policy.correction_path_id"),
+        "appeal_path_id": _id(row["appeal_path_id"], "policy.appeal_path_id"),
         "privacy_review_receipt_id": _id(row["privacy_review_receipt_id"], "privacy_review_receipt_id"),
         "workforce_review_receipt_id": _id(row["workforce_review_receipt_id"], "workforce_review_receipt_id"),
         "compensation_review_receipt_id": _id(row["compensation_review_receipt_id"], "compensation_review_receipt_id"),
@@ -314,6 +315,7 @@ def review_quota_scenarios(document: Any) -> dict[str, Any]:
         "schema_id", "schema_version", "authorization_id", "observed_at", "captured_at",
         "currency", "amount_basis", "period_id", "territory_basis", "coverage_basis",
         "territory_population_receipt_id", "territory_population_complete", "declared_territory_ids",
+        "territory_pseudonymization_receipt",
         "corporate_target_amount", "territory_rows",
     }
     row_fields = {"territory_id", "candidate_quota_amount", "prior_quota_amount", "coverage_state", "coverage_amount"}
@@ -366,6 +368,26 @@ def review_quota_scenarios(document: Any) -> dict[str, Any]:
         )
         if not declared_territories:
             raise ValueError("territory population cannot be empty")
+        pseudonymization = _object(row["territory_pseudonymization_receipt"], "territory_pseudonymization_receipt")
+        pseudonymization_fields = {"receipt_id", "population_receipt_id", "method_id", "namespace_id", "policy_id", "owner_role_id", "approved", "declared_territory_ids"}
+        _keys(pseudonymization, pseudonymization_fields, "territory_pseudonymization_receipt")
+        if not isinstance(pseudonymization["receipt_id"], str) or not OPAQUE_RECEIPT_RE.fullmatch(pseudonymization["receipt_id"]):
+            raise ValueError("pseudonymization receipt_id must be receipt- followed by 32 lowercase hexadecimal characters")
+        receipt_territories = sorted(_unique_ids(_list(pseudonymization["declared_territory_ids"], "pseudonymization.declared_territory_ids"), "pseudonymization.declared_territory_ids", anonymous=True))
+        if receipt_territories != sorted(declared_territories) or _id(pseudonymization["population_receipt_id"], "pseudonymization.population_receipt_id") != territory_population_id:
+            raise ValueError("pseudonymization receipt must match the exact declared territory population")
+        if _boolean(pseudonymization["approved"], "pseudonymization.approved") is not True:
+            raise ValueError("pseudonymization receipt must be approved")
+        pseudonymization_receipt = {
+            "receipt_id": pseudonymization["receipt_id"],
+            "population_receipt_id": territory_population_id,
+            "method_id": _id(pseudonymization["method_id"], "pseudonymization.method_id"),
+            "namespace_id": _id(pseudonymization["namespace_id"], "pseudonymization.namespace_id"),
+            "policy_id": _id(pseudonymization["policy_id"], "pseudonymization.policy_id"),
+            "owner_role_id": _id(pseudonymization["owner_role_id"], "pseudonymization.owner_role_id"),
+            "approved": True,
+            "declared_territory_ids": receipt_territories,
+        }
         target = _decimal(row["corporate_target_amount"], "corporate_target_amount", amount_scale)
 
         observed_territories: set[str] = set()
@@ -431,6 +453,7 @@ def review_quota_scenarios(document: Any) -> dict[str, Any]:
                 **bases,
                 "corporate_target_amount": _format(target, amount_scale, rounding_mode),
                 "declared_territory_ids": sorted(declared_territories),
+                "territory_pseudonymization_receipt": pseudonymization_receipt,
             },
             "calculation_receipt": {
                 "candidate_plan_total": _format(plan_total, amount_scale, rounding_mode),
@@ -457,7 +480,7 @@ def review_quota_scenarios(document: Any) -> dict[str, Any]:
 
 
 def render_review_output(result: dict[str, Any]) -> str:
-    return json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=True) + "\n"
+    return json.dumps(result, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
 
 
 if __name__ == "__main__":

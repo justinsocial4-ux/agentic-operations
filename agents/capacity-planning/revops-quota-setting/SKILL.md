@@ -5,7 +5,7 @@ metadata:
   category: "Capacity Planning"
   phase: "2"
   data_readiness: "approved_policy_complete_anonymous_plan_and_source_receipts_required"
-  version: "2.0"
+  version: "2.1"
   author: "RevOps Agent Factory"
   last_updated: "2026-07-11"
   dependencies:
@@ -22,7 +22,7 @@ Show only what customer-authored anonymous quota scenarios prove arithmetically.
 
 ## Exact Response Rule
 
-Build the input document, run `scripts/quota_scenario.py`, and return `render_review_output(review_quota_scenarios(document))` byte for byte. The first response byte must be `{`; the final response byte must be the helper's newline after `}`. Do not use Markdown fences or add model prose. The helper owns every output value and the final boundary.
+Build the input document, run `scripts/quota_scenario.py`, and return `render_review_output(review_quota_scenarios(document))` byte for byte. The first response byte must be `{` and the final byte must be `}` with no transport-dependent trailing whitespace. Do not use Markdown fences or add model prose. The helper owns every output value and the final boundary.
 
 ## Bundled Resources
 
@@ -39,9 +39,9 @@ Build the input document, run `scripts/quota_scenario.py`, and return `render_re
 ## Operating Rules
 
 1. Work offline and read-only. Do not query, export, cache, schedule, message, alert, write CRM, change quota, change compensation, or modify any territory, account, customer, or worker record.
-2. Require an effective customer policy with stable ID/version, owner, human reviewer, approved purpose, prohibited uses, UTC cutoff, timezone, correction and appeal paths, privacy/workforce/compensation review receipts, affected-worker notice receipt, and exact calculation-rule approvals.
-3. Accept only pre-supplied structured anonymous plan evidence. Reject names, emails, phones, addresses, domains, URLs, notes, free text, job titles, protected traits, individual activity, attainment, compensation, performance, rank, coaching, departure, retention, absence, schedule, or medical data.
-4. Require complete declared source, scenario, and anonymous-territory populations. Missing, duplicate, extra, stale, future, unauthorized, or lineage-conflicting evidence fails closed.
+2. Require an effective customer policy with stable ID/version, owner, human reviewer, approved purpose, prohibited uses, UTC cutoff, timezone, stable correction-path and appeal-path IDs, privacy/workforce/compensation review receipts, affected-worker notice receipt, and exact calculation-rule approvals.
+3. Accept only pre-supplied structured plan evidence with territory IDs formatted as `territory-` plus 32 lowercase hexadecimal characters and a separate approved pseudonymization receipt bound to the exact declared territory set. Reject readable prefixes, names, emails, phones, addresses, domains, URLs, notes, free text, job titles, protected traits, individual activity, attainment, compensation, performance, rank, coaching, departure, retention, absence, schedule, or medical data.
+4. Require complete declared source, scenario, and opaque-territory populations plus exact population-bound pseudonymization receipts. Missing, duplicate, extra, stale, future, unauthorized, unapproved, or lineage-conflicting evidence fails closed.
 5. Bind every scenario to one approved source receipt, schema version, authorization, population receipt, observation time, capture time, currency, amount basis, period, anonymous territory basis, and coverage basis.
 6. Require a customer-authored corporate target and customer-authored candidate and prior quota for every declared anonymous territory. Never create, optimize, infer, or select a quota.
 7. Coverage evidence is optional and explicitly stateful. `accepted` requires a customer-supplied amount; `missing`, `conflicting`, or `suppressed` requires no amount and yields no ratio. Never impute coverage.

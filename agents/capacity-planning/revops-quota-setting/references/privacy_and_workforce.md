@@ -1,7 +1,7 @@
 # Privacy and Workforce Boundary
 
-Use anonymous territory codes only. A code must not identify or encode a person, manager, job title, protected class, team member, customer, account owner, candidate, or employee cohort.
+Use opaque territory codes only: `territory-` plus 32 lowercase hexadecimal characters. Require a separate approved receipt bound to the exact declared territory population. A readable prefix is not anonymity, and the receipt does not authorize re-identification.
 
-Reject identifiers, quasi-identifiers, free text, worker activity, attainment, compensation, performance, ranking, coaching, departure, retention, absence, schedule, medical data, or protected traits.
+Reject names, emails, readable identity-bearing codes, quasi-identifiers, free text, worker activity, attainment, compensation, performance, ranking, coaching, departure, retention, absence, schedule, medical data, or protected traits. Correction and appeal use stable path IDs, never instructions or contact details.
 
 Quota changes can affect pay and employment. Read-only arithmetic is not automatic safety. The skill never selects, evaluates, recommends, monitors, or acts on people, territories, accounts, or compensation. A separate lawful human process must review any decision outside this skill.

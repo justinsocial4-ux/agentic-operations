@@ -7,6 +7,10 @@ import unittest
 from quota_scenario import REQUIRED_PROHIBITIONS, render_review_output, review_quota_scenarios
 
 
+TERRITORY_A = "territory-11111111111111111111111111111111"
+TERRITORY_B = "territory-22222222222222222222222222222222"
+
+
 def fixture():
     binding = {
         "source_id": "source-plan",
@@ -36,8 +40,8 @@ def fixture():
             "timezone": "America/Guayaquil",
             "approved_purpose": "quota_policy_scenario_review",
             "prohibited_uses": sorted(REQUIRED_PROHIBITIONS),
-            "correction_path": "submit a new correction receipt",
-            "appeal_path": "submit an appeal to the named human reviewer",
+            "correction_path_id": "correction-path-alpha",
+            "appeal_path_id": "appeal-path-alpha",
             "privacy_review_receipt_id": "privacy-review-alpha",
             "workforce_review_receipt_id": "workforce-review-alpha",
             "compensation_review_receipt_id": "compensation-review-alpha",
@@ -81,18 +85,28 @@ def fixture():
             "coverage_basis": "qualified-pipeline-same-period",
             "territory_population_receipt_id": "territory-population-alpha",
             "territory_population_complete": True,
-            "declared_territory_ids": ["anonymous-territory-a", "anonymous-territory-b"],
+            "declared_territory_ids": [TERRITORY_A, TERRITORY_B],
+            "territory_pseudonymization_receipt": {
+                "receipt_id": "receipt-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "population_receipt_id": "territory-population-alpha",
+                "method_id": "method-hmac-sha256-truncated-128",
+                "namespace_id": "namespace-quota-territories-v1",
+                "policy_id": "policy-territory-pseudonymization-v1",
+                "owner_role_id": "role-privacy-owner",
+                "approved": True,
+                "declared_territory_ids": [TERRITORY_A, TERRITORY_B],
+            },
             "corporate_target_amount": "1000.00",
             "territory_rows": [
                 {
-                    "territory_id": "anonymous-territory-a",
+                    "territory_id": TERRITORY_A,
                     "candidate_quota_amount": "600.00",
                     "prior_quota_amount": "500.00",
                     "coverage_state": "accepted",
                     "coverage_amount": "1800.00",
                 },
                 {
-                    "territory_id": "anonymous-territory-b",
+                    "territory_id": TERRITORY_B,
                     "candidate_quota_amount": "500.00",
                     "prior_quota_amount": "550.00",
                     "coverage_state": "missing",
@@ -136,7 +150,8 @@ class QuotaScenarioTests(unittest.TestCase):
     def test_exact_renderer(self):
         output = render_review_output(self.review())
         self.assertTrue(output.startswith("{"))
-        self.assertTrue(output.endswith("}\n"))
+        self.assertTrue(output.endswith("}"))
+        self.assertFalse(output.endswith("\n"))
         self.assertEqual(json.loads(output), self.review())
 
     def test_deterministic_renderer(self):
@@ -152,7 +167,7 @@ class QuotaScenarioTests(unittest.TestCase):
     def test_territories_sorted(self):
         data = fixture(); data["scenarios"][0]["territory_rows"].reverse()
         ids = [item["territory_id"] for item in self.review(data)["scenario_receipts"][0]["territory_receipts"]]
-        self.assertEqual(ids, ["anonymous-territory-a", "anonymous-territory-b"])
+        self.assertEqual(ids, [TERRITORY_A, TERRITORY_B])
 
     def test_down_rounding(self):
         data = fixture(); data["policy"]["calculation_policy"]["rounding_mode"] = "down"
@@ -233,6 +248,39 @@ class QuotaScenarioTests(unittest.TestCase):
         data["scenarios"][0]["declared_territory_ids"][0] = "west-alice"
         self.assertRaises(ValueError, self.review, data)
 
+    def test_readable_prefixed_territory_identity_rejected(self):
+        data = fixture(); value = "anonymous-alice-smith"
+        data["scenarios"][0]["territory_rows"][0]["territory_id"] = value
+        data["scenarios"][0]["declared_territory_ids"][0] = value
+        data["scenarios"][0]["territory_pseudonymization_receipt"]["declared_territory_ids"][0] = value
+        self.assertRaises(ValueError, self.review, data)
+
+    def test_email_bearing_territory_identity_rejected(self):
+        data = fixture(); value = "territory-alice@example.test"
+        data["scenarios"][0]["territory_rows"][0]["territory_id"] = value
+        data["scenarios"][0]["declared_territory_ids"][0] = value
+        data["scenarios"][0]["territory_pseudonymization_receipt"]["declared_territory_ids"][0] = value
+        self.assertRaises(ValueError, self.review, data)
+
+    def test_malformed_opaque_territory_ids_rejected(self):
+        for value in ("territory-0123", "territory-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "territory-0000000000000000000000000000000g"):
+            data = fixture(); data["scenarios"][0]["territory_rows"][0]["territory_id"] = value
+            data["scenarios"][0]["declared_territory_ids"][0] = value
+            data["scenarios"][0]["territory_pseudonymization_receipt"]["declared_territory_ids"][0] = value
+            with self.subTest(value=value): self.assertRaises(ValueError, self.review, data)
+
+    def test_pseudonymization_receipt_population_mismatch_rejected(self):
+        data = fixture(); data["scenarios"][0]["territory_pseudonymization_receipt"]["declared_territory_ids"].pop()
+        self.assertRaises(ValueError, self.review, data)
+
+    def test_unapproved_pseudonymization_receipt_rejected(self):
+        data = fixture(); data["scenarios"][0]["territory_pseudonymization_receipt"]["approved"] = False
+        self.assertRaises(ValueError, self.review, data)
+
+    def test_pseudonymization_receipt_rejects_free_text_extra(self):
+        data = fixture(); data["scenarios"][0]["territory_pseudonymization_receipt"]["notes"] = "contact alice@example.test"
+        self.assertRaises(ValueError, self.review, data)
+
     def test_duplicate_territory_rejected(self):
         data = fixture(); data["scenarios"][0]["territory_rows"].append(copy.deepcopy(data["scenarios"][0]["territory_rows"][0]))
         self.assertRaises(ValueError, self.review, data)
@@ -246,7 +294,7 @@ class QuotaScenarioTests(unittest.TestCase):
         self.assertRaises(ValueError, self.review, data)
 
     def test_duplicate_declared_territory_rejected(self):
-        data = fixture(); data["scenarios"][0]["declared_territory_ids"].append("anonymous-territory-a")
+        data = fixture(); data["scenarios"][0]["declared_territory_ids"].append(TERRITORY_A)
         self.assertRaises(ValueError, self.review, data)
 
     def test_empty_territory_population_rejected(self):
@@ -397,8 +445,8 @@ class QuotaScenarioTests(unittest.TestCase):
         self.assertEqual(receipt["compensation_review_receipt_id"], "compensation-review-alpha")
         self.assertEqual(receipt["affected_worker_notice_receipt_id"], "worker-notice-alpha")
 
-    def test_untrimmed_appeal_path_rejected(self):
-        data = fixture(); data["policy"]["appeal_path"] = " appeal "
+    def test_email_bearing_appeal_path_rejected(self):
+        data = fixture(); data["policy"]["appeal_path_id"] = "contact-alice@example.test"
         self.assertRaises(ValueError, self.review, data)
 
     def test_boolean_integer_rejected(self):
@@ -429,8 +477,8 @@ class QuotaScenarioTests(unittest.TestCase):
         data = fixture(); data["scenarios"][0]["amount_basis"] = "revenue with notes"
         self.assertRaises(ValueError, self.review, data)
 
-    def test_untrimmed_correction_path_rejected(self):
-        data = fixture(); data["policy"]["correction_path"] = " correction "
+    def test_free_text_correction_path_rejected(self):
+        data = fixture(); data["policy"]["correction_path_id"] = "submit a correction"
         self.assertRaises(ValueError, self.review, data)
 
     def test_output_has_no_decision_labels(self):
