@@ -21,6 +21,8 @@ PROHIBITIONS = [
     "nurture-action", "outreach-action", "protected-trait", "publication", "ranking",
     "readiness-inference", "routing-action", "scheduling", "worker-data",
 ]
+RECORD_ID = "record-11111111111111111111111111111111"
+RECORD_OTHER = "record-22222222222222222222222222222222"
 
 
 def fixture() -> dict:
@@ -50,7 +52,7 @@ def fixture() -> dict:
     observations = []
     for condition, state in ((conditions[0], "recorded-true"), (conditions[1], "recorded-false")):
         observations.append({
-            "record_id": "record-alpha", "condition_id": condition["condition_id"],
+            "record_id": RECORD_ID, "condition_id": condition["condition_id"],
             "condition_version": "version-alpha", "source_id": "source-alpha",
             "source_version": "version-alpha", "schema_id": "schema-alpha",
             "schema_version": "version-alpha", "authorization_receipt_id": "receipt-authorization",
@@ -66,7 +68,16 @@ def fixture() -> dict:
         "review_declaration": {
             "review_id": "review-alpha", "policy_id": "policy-alpha", "policy_version": "version-alpha",
             "reviewed_at": "2026-07-11T00:00:00Z", "recipient_role_id": "role-reviewer",
-            "record_ids": ["record-alpha"],
+            "record_ids": [RECORD_ID],
+            "record_pseudonymization_receipt": {
+                "receipt_id": "receipt-pseudonymization",
+                "method_id": "method-hmac-sha256-truncated-128",
+                "namespace_id": "namespace-mql-records-v1",
+                "policy_id": "policy-record-pseudonymization-v1",
+                "owner_role_id": "role-privacy-owner",
+                "approved": True,
+                "record_ids": [RECORD_ID],
+            },
         },
         "policy": {
             "policy_id": "policy-alpha", "policy_version": "version-alpha",
@@ -88,7 +99,7 @@ def fixture() -> dict:
             "source_version": "version-alpha", "schema_id": "schema-alpha", "schema_version": "version-alpha",
             "authorization_receipt_id": "receipt-authorization", "query_receipt_id": "receipt-query",
             "page_receipt_id": "receipt-page", "pseudonymization_receipt_id": "receipt-pseudonymization",
-            "complete": True, "record_ids": ["record-alpha"], "captured_at": "2026-07-09T12:00:00Z",
+            "complete": True, "record_ids": [RECORD_ID], "captured_at": "2026-07-09T12:00:00Z",
         }],
         "condition_observations": observations,
     }
@@ -125,8 +136,41 @@ class QualificationEvidenceTests(unittest.TestCase):
     def test_render_exact(self):
         result = review_qualification_evidence(fixture())
         rendered = render_review_output(result)
-        self.assertEqual(rendered, json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False) + "\n\n")
-        self.assertTrue(rendered.startswith("{")); self.assertTrue(rendered.endswith("}\n\n"))
+        self.assertEqual(rendered, json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False))
+        self.assertTrue(rendered.startswith("{")); self.assertTrue(rendered.endswith("}")); self.assertFalse(rendered.endswith("\n"))
+
+    def test_readable_prefixed_record_identity_rejected(self):
+        document = fixture(); value = "record-alice-smith"
+        document["review_declaration"]["record_ids"] = [value]
+        document["review_declaration"]["record_pseudonymization_receipt"]["record_ids"] = [value]
+        document["source_populations"][0]["record_ids"] = [value]
+        for row in document["condition_observations"]: row["record_id"] = value
+        self.assertRaises(ValueError, review_qualification_evidence, document)
+
+    def test_structurally_different_direct_identity_rejected(self):
+        document = fixture(); document["review_declaration"]["record_ids"] = ["Jordan Lee"]
+        self.assertRaises(ValueError, review_qualification_evidence, document)
+
+    def test_email_bearing_record_identity_rejected(self):
+        document = fixture(); document["review_declaration"]["record_ids"] = ["record-alice@example.test"]
+        self.assertRaises(ValueError, review_qualification_evidence, document)
+
+    def test_malformed_opaque_record_ids_rejected(self):
+        for value in ("record-0123", "record-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "record-0000000000000000000000000000000g"):
+            document = fixture(); document["review_declaration"]["record_ids"] = [value]
+            with self.subTest(value=value): self.assertRaises(ValueError, review_qualification_evidence, document)
+
+    def test_pseudonymization_receipt_population_mismatch_rejected(self):
+        document = fixture(); document["review_declaration"]["record_pseudonymization_receipt"]["record_ids"] = [RECORD_OTHER]
+        self.assertRaises(ValueError, review_qualification_evidence, document)
+
+    def test_unapproved_pseudonymization_receipt_rejected(self):
+        document = fixture(); document["review_declaration"]["record_pseudonymization_receipt"]["approved"] = False
+        self.assertRaises(ValueError, review_qualification_evidence, document)
+
+    def test_pseudonymization_receipt_rejects_free_text_extra(self):
+        document = fixture(); document["review_declaration"]["record_pseudonymization_receipt"]["notes"] = "contact alice@example.test"
+        self.assertRaises(ValueError, review_qualification_evidence, document)
 
     def test_input_order_does_not_change_output(self):
         first = fixture(); second = fixture()
@@ -152,8 +196,8 @@ for key in sample["policy"]["source_bindings"][0]: DELETE_PATHS.append(("policy"
 for key in sample["policy"]["conditions"][0]: DELETE_PATHS.append(("policy", "conditions", 0, key))
 for key in sample["source_populations"][0]: DELETE_PATHS.append(("source_populations", 0, key))
 for key in sample["condition_observations"][0]: DELETE_PATHS.append(("condition_observations", 0, key))
-for index, path in enumerate(DELETE_PATHS, start=1):
-    setattr(QualificationEvidenceTests, f"test_required_key_{index:03d}", _delete_test(path))
+for offset, path in enumerate(DELETE_PATHS):
+    setattr(QualificationEvidenceTests, f"test_required_key_{offset + 1:03d}", _delete_test(path))
 
 
 def _semantic_test(mutator):
@@ -173,7 +217,7 @@ SEMANTIC_MUTATORS = [
     lambda d: d["condition_observations"][0].update(extra=True),
     lambda d: d["review_declaration"].update(review_id="Bad ID"),
     lambda d: d["review_declaration"].update(record_ids=["person-alpha"]),
-    lambda d: d["review_declaration"].update(record_ids=["record-alpha", "record-alpha"]),
+    lambda d: d["review_declaration"].update(record_ids=[RECORD_ID, RECORD_ID]),
     lambda d: d["review_declaration"].update(reviewed_at="2026-07-11"),
     lambda d: d["review_declaration"].update(policy_id="policy-other"),
     lambda d: d["review_declaration"].update(recipient_role_id="role-other"),
@@ -201,7 +245,7 @@ SEMANTIC_MUTATORS = [
     lambda d: d["source_populations"][0].update(schema_id="schema-other"),
     lambda d: d["source_populations"].append(copy.deepcopy(d["source_populations"][0])),
     lambda d: d.update(source_populations=[]),
-    lambda d: d["condition_observations"][0].update(record_id="record-other"),
+    lambda d: d["condition_observations"][0].update(record_id=RECORD_OTHER),
     lambda d: d["condition_observations"][0].update(condition_id="condition-other"),
     lambda d: d["condition_observations"][0].update(source_id="source-other"),
     lambda d: d["condition_observations"][0].update(schema_id="schema-other"),
@@ -215,8 +259,8 @@ SEMANTIC_MUTATORS = [
     lambda d: d["condition_observations"].pop(),
     lambda d: d["condition_observations"].append(copy.deepcopy(d["condition_observations"][0])),
 ]
-for index, mutator in enumerate(SEMANTIC_MUTATORS, start=1):
-    setattr(QualificationEvidenceTests, f"test_semantic_rejection_{index:03d}", _semantic_test(mutator))
+for offset, mutator in enumerate(SEMANTIC_MUTATORS):
+    setattr(QualificationEvidenceTests, f"test_semantic_rejection_{offset + 1:03d}", _semantic_test(mutator))
 
 
 if __name__ == "__main__":

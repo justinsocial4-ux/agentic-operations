@@ -5,7 +5,7 @@ metadata:
   category: "Lead Management"
   phase: "2"
   data_readiness: "complete_customer_supplied_pseudonymous_condition_evidence_with_governance_receipts_required"
-  version: "2.0"
+  version: "2.1"
   author: "RevOps Agent Factory"
   last_updated: "2026-07-11"
   dependencies:
@@ -22,7 +22,7 @@ Review whether complete pseudonymous evidence satisfies exact customer-authored 
 
 ## Exact Response Rule
 
-Build the input document, run `scripts/qualification_evidence.py`, and return `render_review_output(review_qualification_evidence(document))` byte for byte. The first response byte must be `{`; the helper supplies one explicit empty terminal line after `}`. Do not add Markdown fences or model prose. The helper owns every output value and boundary.
+Build the input document, run `scripts/qualification_evidence.py`, and return `render_review_output(review_qualification_evidence(document))` byte for byte. The first response byte must be `{` and the final byte must be `}` with no transport-dependent trailing whitespace. Do not add Markdown fences or model prose. The helper owns every output value and boundary.
 
 ## Bundled Resources
 
@@ -40,8 +40,8 @@ Build the input document, run `scripts/qualification_evidence.py`, and return `r
 
 1. Work offline and read-only. Never query, scrape, enrich, monitor, cache, route, nurture, archive, alert, message, export, publish, or modify CRM, marketing, sales, task, campaign, workflow, account, contact, lead, or worker records.
 2. Require one effective customer policy with stable ID/version, exact purpose, owner, human reviewer, marketing and sales approvals, privacy and legal reviews, lawful-basis, notice, objection, correction, recipient, retention, qualification-policy, cutoff, timezone, source bindings, condition definitions, and prohibited uses.
-3. Accept pseudonymous structured records only. Reject names, emails, phones, domains, addresses, URLs, free text, notes, transcripts, message content, protected traits, special-category data, worker attributes, seller-performance data, and unapproved behavioral surveillance.
-4. Reconcile the complete declared record population and every complete approved source population. Missing, duplicate, extra, stale, future, unauthorized, partial, or conflicting evidence fails closed.
+3. Accept record IDs only as `record-` plus 32 lowercase hexadecimal characters and require a separate approved pseudonymization receipt bound to the exact declared record set and source receipt ID. Reject readable prefixes, names, emails, phones, domains, addresses, URLs, free text, notes, transcripts, message content, protected traits, special-category data, worker attributes, seller-performance data, and unapproved behavioral surveillance.
+4. Reconcile the complete declared record population, its population-bound pseudonymization receipt, and every complete approved source population. Missing, duplicate, extra, stale, future, unauthorized, unapproved, partial, or conflicting evidence fails closed.
 5. Bind every condition observation to one exact record, customer-authored condition/version, approved source/schema/authorization/query/page/pseudonymization/population, unique evidence receipt, recorded state, occurrence time, and capture time.
 6. Evaluate only exact boolean conditions. Required conditions must be `recorded-true`; disqualifying conditions must be `recorded-false`. Do not invent points, weights, thresholds, decay, neutral values, fuzzy matches, imputation, confidence, or fallback ICP rules.
 7. Return only `CUSTOMER_POLICY_CONDITIONS_MET`, `CUSTOMER_POLICY_CONDITIONS_NOT_MET`, `EVIDENCE_MISSING`, `EVIDENCE_CONFLICT`, `SUPPRESSED`, or `UNAUTHORIZED` for each record.

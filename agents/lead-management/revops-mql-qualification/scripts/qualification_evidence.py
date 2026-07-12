@@ -35,6 +35,7 @@ REQUIRED_PROHIBITIONS = {
 }
 BOUNDARY = "NO LEAD SCORE, INTENT, FIT, READINESS, MQL LABEL, RANKING, ROUTING, OUTREACH, CRM, OR DOWNSTREAM ACTION"
 ID_RE = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
+OPAQUE_RECORD_RE = re.compile(r"^record-[0-9a-f]{32}$")
 TOKEN_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_./:+-]*$")
 UTC_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 
@@ -64,10 +65,9 @@ def _id(value: Any, label: str) -> str:
 
 
 def _anonymous(value: Any, label: str) -> str:
-    result = _id(value, label)
-    if not result.startswith("record-"):
-        raise ValueError(f"{label} must begin with record-")
-    return result
+    if not isinstance(value, str) or not OPAQUE_RECORD_RE.fullmatch(value):
+        raise ValueError(f"{label} must be record- followed by 32 lowercase hexadecimal characters")
+    return value
 
 
 def _token(value: Any, label: str) -> str:
@@ -245,12 +245,27 @@ def review_qualification_evidence(document: Any) -> dict[str, Any]:
     root = _obj(document, "document")
     _keys(root, {"review_declaration", "policy", "source_populations", "condition_observations"}, "document")
     declaration = _obj(root["review_declaration"], "review_declaration")
-    _keys(declaration, {"review_id", "policy_id", "policy_version", "reviewed_at", "recipient_role_id", "record_ids"}, "review_declaration")
+    _keys(declaration, {"review_id", "policy_id", "policy_version", "reviewed_at", "recipient_role_id", "record_ids", "record_pseudonymization_receipt"}, "review_declaration")
     review_id = _id(declaration["review_id"], "review_declaration.review_id")
     reviewed_text, reviewed = _time(declaration["reviewed_at"], "review_declaration.reviewed_at")
     declared_ids = _ids(declaration["record_ids"], "review_declaration.record_ids", anonymous=True)
     if not declared_ids:
         raise ValueError("declared record population cannot be empty")
+    pseudonymization = _obj(declaration["record_pseudonymization_receipt"], "review_declaration.record_pseudonymization_receipt")
+    pseudonymization_fields = {"receipt_id", "method_id", "namespace_id", "policy_id", "owner_role_id", "approved", "record_ids"}
+    _keys(pseudonymization, pseudonymization_fields, "review_declaration.record_pseudonymization_receipt")
+    receipt_record_ids = sorted(_ids(pseudonymization["record_ids"], "record_pseudonymization_receipt.record_ids", anonymous=True))
+    if receipt_record_ids != sorted(declared_ids) or not _bool(pseudonymization["approved"], "record_pseudonymization_receipt.approved"):
+        raise ValueError("record pseudonymization receipt must be approved and match the exact declared population")
+    pseudonymization_receipt = {
+        "receipt_id": _id(pseudonymization["receipt_id"], "record_pseudonymization_receipt.receipt_id"),
+        "method_id": _id(pseudonymization["method_id"], "record_pseudonymization_receipt.method_id"),
+        "namespace_id": _id(pseudonymization["namespace_id"], "record_pseudonymization_receipt.namespace_id"),
+        "policy_id": _id(pseudonymization["policy_id"], "record_pseudonymization_receipt.policy_id"),
+        "owner_role_id": _id(pseudonymization["owner_role_id"], "record_pseudonymization_receipt.owner_role_id"),
+        "approved": True,
+        "record_ids": receipt_record_ids,
+    }
 
     policy, bindings, conditions = _policy(root["policy"])
     if declaration["policy_id"] != policy["policy_id"] or declaration["policy_version"] != policy["policy_version"]:
@@ -264,6 +279,8 @@ def review_qualification_evidence(document: Any) -> dict[str, Any]:
     if recipient_role_id not in policy["allowed_recipient_role_ids"]:
         raise ValueError("review recipient is not allowed")
     for binding in bindings.values():
+        if binding["pseudonymization_receipt_id"] != pseudonymization_receipt["receipt_id"]:
+            raise ValueError("source binding pseudonymization receipt conflicts with declared record receipt")
         auth_expires = _optional_time(binding["authorization_expires_at"], "binding.authorization_expires_at")[1]
         if auth_expires is not None and auth_expires < reviewed:
             raise ValueError("source authorization does not cover review")
@@ -404,7 +421,7 @@ def review_qualification_evidence(document: Any) -> dict[str, Any]:
         "archive_action_authorized": False,
         "boundary": BOUNDARY,
         "condition_observation_receipts": sorted(observations, key=lambda item: (item["record_id"], item["condition_id"], item["condition_version"])),
-        "declared_population_receipt": {"record_ids": sorted(declared_ids), "member_count": str(len(declared_ids))},
+        "declared_population_receipt": {"record_ids": sorted(declared_ids), "member_count": str(len(declared_ids)), "pseudonymization_receipt": pseudonymization_receipt},
         "downstream_decision_authorized": False,
         "lifecycle_label_authorized": False,
         "nurture_action_authorized": False,
@@ -424,7 +441,7 @@ def review_qualification_evidence(document: Any) -> dict[str, Any]:
 
 
 def render_review_output(result: dict[str, Any]) -> str:
-    return json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False) + "\n\n"
+    return json.dumps(result, indent=2, sort_keys=True, ensure_ascii=False)
 
 
 def main(argv: list[str]) -> int:
