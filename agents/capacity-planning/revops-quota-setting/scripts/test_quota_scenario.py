@@ -3,6 +3,7 @@
 import copy
 import json
 import unittest
+from decimal import getcontext
 
 from quota_scenario import REQUIRED_PROHIBITIONS, render_review_output, review_quota_scenarios
 
@@ -229,6 +230,60 @@ class QuotaScenarioTests(unittest.TestCase):
     def test_excess_scale_rejected(self):
         data = fixture(); data["scenarios"][0]["corporate_target_amount"] = "1.001"
         self.assertRaises(ValueError, self.review, data)
+
+    def test_oversized_target_rejected_as_value_error(self):
+        data = fixture(); data["scenarios"][0]["corporate_target_amount"] = "9" * 27 + ".00"
+        self.assertRaises(ValueError, self.review, data)
+
+    def test_oversized_candidate_rejected_as_value_error(self):
+        data = fixture(); data["scenarios"][0]["territory_rows"][0]["candidate_quota_amount"] = "9" * 27 + ".00"
+        self.assertRaises(ValueError, self.review, data)
+
+    def test_oversized_prior_rejected_as_value_error(self):
+        data = fixture(); data["scenarios"][0]["territory_rows"][0]["prior_quota_amount"] = "9" * 27 + ".00"
+        self.assertRaises(ValueError, self.review, data)
+
+    def test_oversized_coverage_rejected_as_value_error(self):
+        data = fixture(); data["scenarios"][0]["territory_rows"][0]["coverage_amount"] = "9" * 27 + ".00"
+        self.assertRaises(ValueError, self.review, data)
+
+    def test_28_digit_inputs_support_exact_larger_derived_total(self):
+        data = fixture(); boundary = "9" * 26 + ".99"
+        data["scenarios"][0]["corporate_target_amount"] = "0.00"
+        for row in data["scenarios"][0]["territory_rows"]:
+            row["candidate_quota_amount"] = boundary
+            row["prior_quota_amount"] = "0.00"
+        data["scenarios"][0]["territory_rows"][0]["coverage_amount"] = boundary
+        receipt = self.review(data)["scenario_receipts"][0]
+        self.assertEqual(receipt["calculation_receipt"], {
+            "candidate_plan_total": "199999999999999999999999999.98",
+            "target_difference": "199999999999999999999999999.98",
+        })
+
+    def test_28_digit_coverage_supports_exact_large_ratio(self):
+        data = fixture(); row = data["scenarios"][0]["territory_rows"][0]
+        row["candidate_quota_amount"] = "0.01"
+        row["coverage_amount"] = "9" * 26 + ".99"
+        ratio = self.review(data)["scenario_receipts"][0]["territory_receipts"][0]["calculation_receipt"]["coverage_ratio"]
+        self.assertEqual(ratio, "9999999999999999999999999999.000")
+
+    def test_half_even_ratio_ties_are_exact(self):
+        cases = (("1.00", "8.00", "0.12"), ("3.00", "8.00", "0.38"))
+        for coverage, candidate, expected in cases:
+            data = fixture(); data["policy"]["calculation_policy"]["ratio_scale"] = 2
+            row = data["scenarios"][0]["territory_rows"][0]
+            row["candidate_quota_amount"] = candidate; row["coverage_amount"] = coverage
+            with self.subTest(coverage=coverage, candidate=candidate):
+                ratio = self.review(data)["scenario_receipts"][0]["territory_receipts"][0]["calculation_receipt"]["coverage_ratio"]
+                self.assertEqual(ratio, expected)
+
+    def test_global_decimal_precision_does_not_change_output(self):
+        original = getcontext().prec
+        try:
+            getcontext().prec = 3
+            self.assertEqual(self.review()["scenario_receipts"][0]["calculation_receipt"]["candidate_plan_total"], "1100.00")
+        finally:
+            getcontext().prec = original
 
     def test_unknown_root_key_rejected(self):
         data = fixture(); data["advice"] = "increase quota"

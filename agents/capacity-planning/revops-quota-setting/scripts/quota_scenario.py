@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 import re
 from datetime import datetime, timezone
-from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_HALF_EVEN
+from decimal import Decimal, InvalidOperation, ROUND_DOWN, ROUND_HALF_EVEN, localcontext
 from typing import Any
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -36,6 +36,8 @@ REQUIRED_PROHIBITIONS = {
     "worker-ranking",
 }
 ROUNDING = {"half_even": ROUND_HALF_EVEN, "down": ROUND_DOWN}
+MAX_DECIMAL_DIGITS = 28
+MAX_DECIMAL_SCALE = 6
 ID_RE = re.compile(r"^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$")
 OPAQUE_TERRITORY_RE = re.compile(r"^territory-[0-9a-f]{32}$")
 OPAQUE_RECEIPT_RE = re.compile(r"^receipt-[0-9a-f]{32}$")
@@ -119,6 +121,8 @@ def _decimal(value: Any, label: str, scale: int, *, positive: bool = False) -> D
         raise ValueError(f"{label} must be a non-negative plain decimal string")
     if len(value.partition(".")[2]) > scale:
         raise ValueError(f"{label} exceeds the approved scale")
+    if len(value.replace(".", "")) > MAX_DECIMAL_DIGITS:
+        raise ValueError(f"{label} exceeds the {MAX_DECIMAL_DIGITS}-digit input limit")
     try:
         result = Decimal(value)
     except InvalidOperation as exc:
@@ -130,7 +134,33 @@ def _decimal(value: Any, label: str, scale: int, *, positive: bool = False) -> D
 
 def _format(value: Decimal, scale: int, rounding: str) -> str:
     quantum = Decimal(1).scaleb(-scale)
-    return format(value.quantize(quantum, rounding=ROUNDING[rounding]), "f")
+    try:
+        return format(value.quantize(quantum, rounding=ROUNDING[rounding]), "f")
+    except InvalidOperation as exc:
+        raise ValueError("decimal result exceeds the approved calculation precision") from exc
+
+
+def _calculation_precision(territory_count: int, amount_scale: int, ratio_scale: int) -> int:
+    """Cover maximum input magnitude, small-divisor expansion, output scale, and exact summation growth."""
+    return MAX_DECIMAL_DIGITS + amount_scale + ratio_scale + len(str(max(1, territory_count))) + 4
+
+
+def _format_ratio(numerator: Decimal, denominator: Decimal, scale: int, rounding: str) -> str:
+    """Round a non-negative Decimal ratio exactly from integer remainders, independent of Decimal context."""
+    numerator_top, numerator_bottom = numerator.as_integer_ratio()
+    denominator_top, denominator_bottom = denominator.as_integer_ratio()
+    scaled_top = numerator_top * denominator_bottom * (10 ** scale)
+    scaled_bottom = numerator_bottom * denominator_top
+    quotient, remainder = divmod(scaled_top, scaled_bottom)
+    if rounding == "half_even":
+        doubled = remainder * 2
+        if doubled > scaled_bottom or (doubled == scaled_bottom and quotient % 2 == 1):
+            quotient += 1
+    digits = str(quotient)
+    if scale == 0:
+        return digits
+    digits = digits.zfill(scale + 1)
+    return f"{digits[:-scale]}.{digits[-scale:]}"
 
 
 def _unique_ids(values: list[Any], label: str, *, anonymous: bool = False) -> list[str]:
@@ -172,8 +202,8 @@ def _policy(raw: Any) -> tuple[dict[str, Any], dict[tuple[str, str], dict[str, A
 
     calculation = _object(row["calculation_policy"], "policy.calculation_policy")
     _keys(calculation, {"amount_scale", "ratio_scale", "rounding_mode", "approved_rule_ids"}, "policy.calculation_policy")
-    amount_scale = _integer(calculation["amount_scale"], "amount_scale", 0, 6)
-    ratio_scale = _integer(calculation["ratio_scale"], "ratio_scale", 0, 6)
+    amount_scale = _integer(calculation["amount_scale"], "amount_scale", 0, MAX_DECIMAL_SCALE)
+    ratio_scale = _integer(calculation["ratio_scale"], "ratio_scale", 0, MAX_DECIMAL_SCALE)
     rounding_mode = _token(calculation["rounding_mode"], "rounding_mode")
     if rounding_mode not in ROUNDING:
         raise ValueError("rounding_mode is not supported")
@@ -388,85 +418,87 @@ def review_quota_scenarios(document: Any) -> dict[str, Any]:
             "approved": True,
             "declared_territory_ids": receipt_territories,
         }
-        target = _decimal(row["corporate_target_amount"], "corporate_target_amount", amount_scale)
+        territory_rows = _list(row["territory_rows"], "territory_rows")
+        with localcontext() as context:
+            context.prec = _calculation_precision(len(territory_rows), amount_scale, ratio_scale)
+            target = _decimal(row["corporate_target_amount"], "corporate_target_amount", amount_scale)
 
-        observed_territories: set[str] = set()
-        territory_receipts: list[dict[str, Any]] = []
-        plan_total = Decimal(0)
-        for row_index, raw_territory in enumerate(_list(row["territory_rows"], "territory_rows")):
-            territory = _object(raw_territory, f"territory_rows[{row_index}]")
-            _keys(territory, row_fields, f"territory_rows[{row_index}]")
-            territory_id = _anonymous_id(territory["territory_id"], "territory_id")
-            if territory_id in observed_territories:
-                raise ValueError("duplicate territory row")
-            observed_territories.add(territory_id)
-            candidate = _decimal(territory["candidate_quota_amount"], "candidate_quota_amount", amount_scale, positive=True)
-            prior = _decimal(territory["prior_quota_amount"], "prior_quota_amount", amount_scale)
-            state = _id(territory["coverage_state"], "coverage_state")
-            if state not in COVERAGE_STATES:
-                raise ValueError("coverage_state is not supported")
-            coverage_raw = territory["coverage_amount"]
-            if state == "accepted":
-                coverage = _decimal(coverage_raw, "coverage_amount", amount_scale)
-                ratio = coverage / candidate
-                ratio_text = _format(ratio, ratio_scale, rounding_mode)
-                coverage_text = _format(coverage, amount_scale, rounding_mode)
-            else:
-                if coverage_raw is not None:
-                    raise ValueError("unresolved coverage state must not carry an amount")
-                ratio_text = None
-                coverage_text = None
-            plan_total += candidate
-            territory_receipts.append({
-                "territory_id": territory_id,
+            observed_territories: set[str] = set()
+            territory_receipts: list[dict[str, Any]] = []
+            plan_total = Decimal(0)
+            for row_index, raw_territory in enumerate(territory_rows):
+                territory = _object(raw_territory, f"territory_rows[{row_index}]")
+                _keys(territory, row_fields, f"territory_rows[{row_index}]")
+                territory_id = _anonymous_id(territory["territory_id"], "territory_id")
+                if territory_id in observed_territories:
+                    raise ValueError("duplicate territory row")
+                observed_territories.add(territory_id)
+                candidate = _decimal(territory["candidate_quota_amount"], "candidate_quota_amount", amount_scale, positive=True)
+                prior = _decimal(territory["prior_quota_amount"], "prior_quota_amount", amount_scale)
+                state = _id(territory["coverage_state"], "coverage_state")
+                if state not in COVERAGE_STATES:
+                    raise ValueError("coverage_state is not supported")
+                coverage_raw = territory["coverage_amount"]
+                if state == "accepted":
+                    coverage = _decimal(coverage_raw, "coverage_amount", amount_scale)
+                    ratio_text = _format_ratio(coverage, candidate, ratio_scale, rounding_mode)
+                    coverage_text = _format(coverage, amount_scale, rounding_mode)
+                else:
+                    if coverage_raw is not None:
+                        raise ValueError("unresolved coverage state must not carry an amount")
+                    ratio_text = None
+                    coverage_text = None
+                plan_total += candidate
+                territory_receipts.append({
+                    "territory_id": territory_id,
+                    "input_receipt": {
+                        "candidate_quota_amount": _format(candidate, amount_scale, rounding_mode),
+                        "prior_quota_amount": _format(prior, amount_scale, rounding_mode),
+                        "coverage_state": state,
+                        "coverage_amount": coverage_text,
+                    },
+                    "calculation_receipt": {
+                        "prior_quota_delta": _format(candidate - prior, amount_scale, rounding_mode),
+                        "coverage_ratio": ratio_text,
+                    },
+                })
+            if observed_territories != set(declared_territories):
+                raise ValueError("territory population is incomplete or contains extras")
+
+            receipts.append({
+                "scenario_id": scenario_id,
+                "review_state": "HUMAN_REVIEW_REQUIRED",
+                "action_authorized": False,
                 "input_receipt": {
-                    "candidate_quota_amount": _format(candidate, amount_scale, rounding_mode),
-                    "prior_quota_amount": _format(prior, amount_scale, rounding_mode),
-                    "coverage_state": state,
-                    "coverage_amount": coverage_text,
+                    "population_receipt_id": population_id,
+                    "territory_population_receipt_id": territory_population_id,
+                    "source_id": population["source_id"],
+                    "source_version": population["source_version"],
+                    "source_kind": population["source_kind"],
+                    "schema_id": population["schema_id"],
+                    "schema_version": population["schema_version"],
+                    "authorization_id": population["authorization_id"],
+                    "authorization_effective_at": binding["authorization_effective_at"],
+                    "authorization_expires_at": binding["authorization_expires_at"],
+                    "observed_at": observed_text,
+                    "captured_at": captured_text,
+                    **bases,
+                    "corporate_target_amount": _format(target, amount_scale, rounding_mode),
+                    "declared_territory_ids": sorted(declared_territories),
+                    "territory_pseudonymization_receipt": pseudonymization_receipt,
                 },
                 "calculation_receipt": {
-                    "prior_quota_delta": _format(candidate - prior, amount_scale, rounding_mode),
-                    "coverage_ratio": ratio_text,
+                    "candidate_plan_total": _format(plan_total, amount_scale, rounding_mode),
+                    "target_difference": _format(plan_total - target, amount_scale, rounding_mode),
                 },
+                "territory_receipts": sorted(territory_receipts, key=lambda item: item["territory_id"]),
+                "limitations": [
+                    "anonymous-customer-authored-scenario-arithmetic-only",
+                    "no-fairness-or-achievability-label",
+                    "no-forecast-confidence-or-causal-claim",
+                    "no-quota-compensation-territory-account-worker-customer-or-crm-action",
+                ],
             })
-        if observed_territories != set(declared_territories):
-            raise ValueError("territory population is incomplete or contains extras")
-
-        receipts.append({
-            "scenario_id": scenario_id,
-            "review_state": "HUMAN_REVIEW_REQUIRED",
-            "action_authorized": False,
-            "input_receipt": {
-                "population_receipt_id": population_id,
-                "territory_population_receipt_id": territory_population_id,
-                "source_id": population["source_id"],
-                "source_version": population["source_version"],
-                "source_kind": population["source_kind"],
-                "schema_id": population["schema_id"],
-                "schema_version": population["schema_version"],
-                "authorization_id": population["authorization_id"],
-                "authorization_effective_at": binding["authorization_effective_at"],
-                "authorization_expires_at": binding["authorization_expires_at"],
-                "observed_at": observed_text,
-                "captured_at": captured_text,
-                **bases,
-                "corporate_target_amount": _format(target, amount_scale, rounding_mode),
-                "declared_territory_ids": sorted(declared_territories),
-                "territory_pseudonymization_receipt": pseudonymization_receipt,
-            },
-            "calculation_receipt": {
-                "candidate_plan_total": _format(plan_total, amount_scale, rounding_mode),
-                "target_difference": _format(plan_total - target, amount_scale, rounding_mode),
-            },
-            "territory_receipts": sorted(territory_receipts, key=lambda item: item["territory_id"]),
-            "limitations": [
-                "anonymous-customer-authored-scenario-arithmetic-only",
-                "no-fairness-or-achievability-label",
-                "no-forecast-confidence-or-causal-claim",
-                "no-quota-compensation-territory-account-worker-customer-or-crm-action",
-            ],
-        })
     if observed_scenarios != declared_scenarios:
         raise ValueError("scenario population is incomplete or contains extras")
 
