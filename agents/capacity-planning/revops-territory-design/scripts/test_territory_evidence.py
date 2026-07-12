@@ -28,7 +28,10 @@ class TerritoryEvidenceTests(unittest.TestCase):
     REP_UNKNOWN = "rep-ffffffffffffffffffffffffffffffff"
 
     def evidence(self):
-        return [{"evidence_id": "E-1", "source_id": "crm-export", "source_version": "v7", "extracted_at": "2026-07-10T12:00:00Z", "as_of": "2026-07-10T11:59:59Z", "policy_id": "SRC-2", "purpose": "territory scenario review", "access_scope": "aggregate-and-pseudonymous"}]
+        return [
+            {"evidence_id": "E-1", "source_id": "crm-export", "source_version": "v7", "extracted_at": "2026-07-10T12:00:00Z", "as_of": "2026-07-10T11:59:59Z", "policy_id": "SRC-2", "purpose": "territory scenario review", "access_scope": "aggregate-and-pseudonymous"},
+            {"evidence_id": "E-ROUTE", "source_id": "routes-api", "source_version": "2026-07", "extracted_at": "2026-07-10T12:00:00Z", "as_of": "2026-07-10T11:59:59Z", "policy_id": "ROUTE-SRC-1", "purpose": "territory route evidence review", "access_scope": "pseudonymous-work-anchor-routes"},
+        ]
 
     def assignments(self, moved=False):
         return [
@@ -36,22 +39,39 @@ class TerritoryEvidenceTests(unittest.TestCase):
             {"assignment_id": "AS-2", "account_id": "A-2", "rep_ids": [self.REP_TWO], "evidence_ids": ["E-1"]},
         ]
 
+    def constraint(self, **overrides):
+        row = {
+            "constraint_id": "C-1",
+            "constraint_version": "v1",
+            "type": "PINNED",
+            "account_id": "A-1",
+            "rep_id": self.REP_ONE,
+            "evidence_id": "E-1",
+            "policy_id": "CON-1",
+            "policy_version": "v1",
+            "effective_at": "2026-07-01T00:00:00Z",
+            "owner_role_id": "role-territory-policy-owner",
+            "conflict_path_id": "path-territory-constraint-conflict-v1",
+        }
+        row.update(overrides)
+        return {key: value for key, value in row.items() if value is not None}
+
     def constraints(self):
         return [
-            {"constraint_id": "C-1", "type": "PINNED", "account_id": "A-1", "rep_id": self.REP_ONE, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
-            {"constraint_id": "C-2", "type": "MAX_COUNT", "rep_id": self.REP_TWO, "value": 2, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
+            self.constraint(),
+            self.constraint(constraint_id="C-2", type="MAX_COUNT", account_id=None, rep_id=self.REP_TWO, value=2),
         ]
 
     def amounts(self):
         return [
-            {"account_id": "A-1", "amount": "100.25", "currency": "USD", "period": "FY2026", "basis": "finance-approved-arr", "evidence_id": "E-1"},
-            {"account_id": "A-2", "amount": "99.75", "currency": "usd", "period": "FY2026", "basis": "finance-approved-arr", "evidence_id": "E-1"},
+            {"account_id": "A-1", "amount": "100.25", "currency": "USD", "period": "FY2026", "basis": "finance-approved-arr", "evidence_id": "E-1", "source_version": "v7", "cutoff_at": "2026-07-10T11:59:59Z", "metric_owner_role_id": "role-finance-metric-owner"},
+            {"account_id": "A-2", "amount": "99.75", "currency": "usd", "period": "FY2026", "basis": "finance-approved-arr", "evidence_id": "E-1", "source_version": "v7", "cutoff_at": "2026-07-10T11:59:59Z", "metric_owner_role_id": "role-finance-metric-owner"},
         ]
 
     def routes(self, moved=False):
         return [
-            {"route_id": "RT-1", "account_id": "A-1", "rep_id": self.REP_TWO if moved else self.REP_ONE, "duration_minutes": "30", "distance": "15.5", "distance_unit": "km", "mode": "DRIVE", "work_anchor_id": "WA-1", "departure_policy_id": "DEP-1", "routing_policy_id": "ROUTE-1", "source_id": "routes-api", "source_version": "2026-07", "status": "OK", "fallback": "NONE", "visit_frequency": "2", "evidence_id": "E-1"},
-            {"route_id": "RT-2", "account_id": "A-2", "rep_id": self.REP_TWO, "duration_minutes": "20", "distance": "10", "distance_unit": "km", "mode": "DRIVE", "work_anchor_id": "WA-2", "departure_policy_id": "DEP-1", "routing_policy_id": "ROUTE-1", "source_id": "routes-api", "source_version": "2026-07", "status": "OK", "fallback": "NONE", "visit_frequency": "1", "evidence_id": "E-1"},
+            {"route_id": "RT-1", "account_id": "A-1", "rep_id": self.REP_TWO if moved else self.REP_ONE, "duration_minutes": "30", "distance": "15.5", "distance_unit": "km", "mode": "DRIVE", "work_anchor_id": "WA-1", "departure_policy_id": "DEP-1", "routing_policy_id": "ROUTE-1", "source_id": "routes-api", "source_version": "2026-07", "status": "OK", "fallback": "NONE", "visit_frequency": "2", "evidence_id": "E-ROUTE"},
+            {"route_id": "RT-2", "account_id": "A-2", "rep_id": self.REP_TWO, "duration_minutes": "20", "distance": "10", "distance_unit": "km", "mode": "DRIVE", "work_anchor_id": "WA-2", "departure_policy_id": "DEP-1", "routing_policy_id": "ROUTE-1", "source_id": "routes-api", "source_version": "2026-07", "status": "OK", "fallback": "NONE", "visit_frequency": "1", "evidence_id": "E-ROUTE"},
         ]
 
     def pseudonymization(self, rep_ids=None, approved=True):
@@ -78,7 +98,13 @@ class TerritoryEvidenceTests(unittest.TestCase):
     def test_evidence_valid_and_sorted(self):
         rows = self.evidence() + [dict(self.evidence()[0], evidence_id="E-0", source_version="v6")]
         result = validate_evidence(rows)
-        self.assertEqual([row["evidence_id"] for row in result["evidence"]], ["E-0", "E-1"])
+        self.assertEqual([row["evidence_id"] for row in result["evidence"]], ["E-0", "E-1", "E-ROUTE"])
+
+    def test_evidence_rejects_unpreserved_extra_fields(self):
+        rows = self.evidence()
+        rows[0]["notes"] = "contact alice@example.test"
+        with self.assertRaises(ValueError):
+            validate_evidence(rows)
 
     def test_evidence_duplicate_fails(self):
         with self.assertRaises(ValueError): validate_evidence(self.evidence() * 2)
@@ -96,6 +122,12 @@ class TerritoryEvidenceTests(unittest.TestCase):
     def test_complete_assignment_is_valid(self):
         result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments())
         self.assertEqual(result["state"], "VALID")
+
+    def test_assignment_rejects_unpreserved_extra_fields(self):
+        rows = self.assignments()
+        rows[0]["notes"] = "contact alice@example.test"
+        with self.assertRaises(ValueError):
+            reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=rows)
 
     def test_direct_rep_identity_rejected(self):
         rows = self.assignments()
@@ -187,12 +219,50 @@ class TerritoryEvidenceTests(unittest.TestCase):
     def test_constraints_valid(self):
         self.assertEqual(validate_constraints(reconciliation=self.reconciliation(), constraint_rows=self.constraints())["state"], "VALID")
 
+    def test_constraint_provenance_is_preserved(self):
+        row = validate_constraints(reconciliation=self.reconciliation(), constraint_rows=self.constraints())["constraints"][0]
+        self.assertEqual(
+            {key: row[key] for key in ("constraint_version", "policy_version", "effective_at", "owner_role_id", "conflict_path_id")},
+            {
+                "constraint_version": "v1",
+                "policy_version": "v1",
+                "effective_at": "2026-07-01T00:00:00Z",
+                "owner_role_id": "role-territory-policy-owner",
+                "conflict_path_id": "path-territory-constraint-conflict-v1",
+            },
+        )
+
+    def test_constraint_provenance_fields_are_required(self):
+        for field in ("constraint_version", "policy_version", "effective_at", "owner_role_id", "conflict_path_id"):
+            rows = self.constraints()
+            del rows[0][field]
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)
+
+    def test_constraint_effective_time_must_be_utc(self):
+        rows = self.constraints()
+        rows[0]["effective_at"] = "2026-07-01"
+        with self.assertRaises(ValueError):
+            validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)
+
+    def test_future_constraint_is_not_effective_for_referenced_evidence(self):
+        rows = self.constraints()
+        rows[0]["effective_at"] = "2026-07-11T00:00:00Z"
+        with self.assertRaises(ValueError):
+            scenario_review(scenario_id="S-FUTURE-C", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(), evidence_rows=self.evidence(), constraint_rows=rows, amount_rows=self.amounts(), route_rows=self.routes(), workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
+
+    def test_constraint_rejects_unpreserved_free_text(self):
+        rows = self.constraints()
+        rows[0]["notes"] = "contact alice@example.test"
+        with self.assertRaises(ValueError):
+            validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)
+
     def test_pinned_violation_is_visible(self):
         result = validate_constraints(reconciliation=reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(True)), constraint_rows=self.constraints())
         self.assertEqual(result["state"], "CONSTRAINT_VIOLATION")
 
     def test_conflicting_pinned_and_forbidden_is_visible(self):
-        rows = self.constraints() + [{"constraint_id": "C-3", "type": "FORBIDDEN", "account_id": "A-1", "rep_id": self.REP_ONE, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"}]
+        rows = self.constraints() + [self.constraint(constraint_id="C-3", type="FORBIDDEN")]
         result = validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)
         self.assertTrue(result["conflicts"])
 
@@ -201,23 +271,78 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def test_multiple_allowed_pairs_are_a_set(self):
         rows = [
-            {"constraint_id": "C-A1", "type": "ALLOWED_PAIR", "account_id": "A-1", "rep_id": self.REP_ONE, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
-            {"constraint_id": "C-A2", "type": "ALLOWED_PAIR", "account_id": "A-1", "rep_id": self.REP_TWO, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
+            self.constraint(constraint_id="C-A1", type="ALLOWED_PAIR"),
+            self.constraint(constraint_id="C-A2", type="ALLOWED_PAIR", rep_id=self.REP_TWO),
         ]
         self.assertEqual(validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)["state"], "VALID")
 
     def test_unknown_constraint_target_is_conflict(self):
-        rows = [{"constraint_id": "C-X", "type": "PINNED", "account_id": "A-X", "rep_id": self.REP_ONE, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"}]
+        rows = [self.constraint(constraint_id="C-X", account_id="A-X")]
         self.assertEqual(validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)["state"], "CONSTRAINT_VIOLATION")
 
     def test_constraint_rep_identity_cannot_bypass_population_contract(self):
-        rows = [{"constraint_id": "C-X", "type": "PINNED", "account_id": "A-1", "rep_id": "rep-alice-smith", "evidence_id": "E-1", "policy_id": "CON-1", "owner": "role-territory-owner"}]
+        rows = [self.constraint(constraint_id="C-X", rep_id="rep-alice-smith")]
         with self.assertRaises(ValueError):
             validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)
+
+    def test_scenario_rejects_undeclared_assignment_evidence(self):
+        rows = self.assignments()
+        rows[0]["evidence_ids"] = ["E-NOT-DECLARED"]
+        with self.assertRaises(ValueError):
+            scenario_review(scenario_id="S-BAD-A", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=rows, evidence_rows=self.evidence(), constraint_rows=self.constraints(), amount_rows=self.amounts(), route_rows=self.routes(), workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
+
+    def test_scenario_rejects_mixed_declared_and_undeclared_assignment_evidence(self):
+        rows = self.assignments()
+        rows[0]["evidence_ids"] = ["E-1", "E-ROGUE"]
+        with self.assertRaises(ValueError):
+            scenario_review(scenario_id="S-BAD-A2", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=rows, evidence_rows=self.evidence(), constraint_rows=self.constraints(), amount_rows=self.amounts(), route_rows=self.routes(), workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
+
+    def test_scenario_rejects_undeclared_constraint_evidence(self):
+        rows = self.constraints()
+        rows[0]["evidence_id"] = "E-NOT-DECLARED"
+        with self.assertRaises(ValueError):
+            scenario_review(scenario_id="S-BAD-C", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(), evidence_rows=self.evidence(), constraint_rows=rows, amount_rows=self.amounts(), route_rows=self.routes(), workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
+
+    def test_scenario_rejects_undeclared_amount_evidence(self):
+        rows = self.amounts()
+        rows[0]["evidence_id"] = "E-NOT-DECLARED"
+        with self.assertRaises(ValueError):
+            scenario_review(scenario_id="S-BAD-M", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(), evidence_rows=self.evidence(), constraint_rows=self.constraints(), amount_rows=rows, route_rows=self.routes(), workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
+
+    def test_scenario_rejects_undeclared_route_evidence(self):
+        rows = self.routes()
+        rows[0]["evidence_id"] = "E-NOT-DECLARED"
+        with self.assertRaises(ValueError):
+            scenario_review(scenario_id="S-BAD-R", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(), evidence_rows=self.evidence(), constraint_rows=self.constraints(), amount_rows=self.amounts(), route_rows=rows, workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
 
     def test_amounts_exact(self):
         result = summarize_amounts(reconciliation=self.reconciliation(), amount_rows=self.amounts())
         self.assertEqual((result["state"], result["per_rep_totals"]), ("VALID", [{"rep_id": self.REP_ONE, "amount": Decimal("100.25")}, {"rep_id": self.REP_TWO, "amount": Decimal("99.75")}]))
+
+    def test_amount_provenance_fields_are_required(self):
+        for field in ("source_version", "cutoff_at", "metric_owner_role_id"):
+            rows = self.amounts()
+            del rows[0][field]
+            with self.subTest(field=field), self.assertRaises(ValueError):
+                summarize_amounts(reconciliation=self.reconciliation(), amount_rows=rows)
+
+    def test_amount_rejects_unpreserved_extra_fields(self):
+        rows = self.amounts()
+        rows[0]["notes"] = "contact alice@example.test"
+        with self.assertRaises(ValueError):
+            summarize_amounts(reconciliation=self.reconciliation(), amount_rows=rows)
+
+    def test_amount_source_version_must_match_referenced_evidence(self):
+        rows = self.amounts()
+        rows[0]["source_version"] = "v999"
+        with self.assertRaises(ValueError):
+            scenario_review(scenario_id="S-BAD-AMOUNT-SOURCE", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(), evidence_rows=self.evidence(), constraint_rows=self.constraints(), amount_rows=rows, route_rows=self.routes(), workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
+
+    def test_amount_cutoff_must_match_referenced_evidence(self):
+        rows = self.amounts()
+        rows[0]["cutoff_at"] = "2026-07-09T00:00:00Z"
+        with self.assertRaises(ValueError):
+            scenario_review(scenario_id="S-BAD-AMOUNT-CUTOFF", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(), evidence_rows=self.evidence(), constraint_rows=self.constraints(), amount_rows=rows, route_rows=self.routes(), workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
 
     def test_missing_amount_is_source_required(self):
         result = summarize_amounts(reconciliation=self.reconciliation(), amount_rows=self.amounts()[:1])
@@ -246,13 +371,25 @@ class TerritoryEvidenceTests(unittest.TestCase):
         with self.assertRaises(ValueError): summarize_amounts(reconciliation=self.reconciliation(), amount_rows=rows)
 
     def test_extra_amount_record_is_visible(self):
-        rows = self.amounts() + [{"account_id": "A-X", "amount": "1", "currency": "USD", "period": "FY2026", "basis": "finance-approved-arr", "evidence_id": "E-1"}]
+        rows = self.amounts() + [dict(self.amounts()[0], account_id="A-X", amount="1")]
         result = summarize_amounts(reconciliation=self.reconciliation(), amount_rows=rows)
         self.assertEqual((result["state"], result["extra_account_ids"]), ("SOURCE_REQUIRED", ["A-X"]))
 
     def test_route_totals_use_supplied_frequency(self):
         result = summarize_routes(reconciliation=self.reconciliation(), route_rows=self.routes())
         self.assertEqual(result["per_rep_totals"][0]["duration_minutes"], Decimal("60"))
+
+    def test_route_rejects_unpreserved_extra_fields(self):
+        rows = self.routes()
+        rows[0]["notes"] = "contact alice@example.test"
+        with self.assertRaises(ValueError):
+            summarize_routes(reconciliation=self.reconciliation(), route_rows=rows)
+
+    def test_route_source_version_must_match_referenced_evidence(self):
+        rows = self.routes()
+        rows[0]["source_version"] = "2099-01"
+        with self.assertRaises(ValueError):
+            scenario_review(scenario_id="S-BAD-ROUTE-SOURCE", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(), evidence_rows=self.evidence(), constraint_rows=self.constraints(), amount_rows=self.amounts(), route_rows=rows, workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
 
     def test_zero_assignment_rep_is_present_in_all_summaries(self):
         reconciliation = reconcile_assignments(
@@ -310,6 +447,12 @@ class TerritoryEvidenceTests(unittest.TestCase):
     def test_solver_free_text_cannot_enter_receipt(self):
         receipt = self.solver()
         receipt["solver"] = "contact alice@example.test"
+        with self.assertRaises(ValueError):
+            validate_solver_receipt(receipt)
+
+    def test_solver_rejects_unpreserved_extra_fields(self):
+        receipt = self.solver()
+        receipt["notes"] = "contact alice@example.test"
         with self.assertRaises(ValueError):
             validate_solver_receipt(receipt)
 
@@ -401,6 +544,9 @@ class TerritoryEvidenceTests(unittest.TestCase):
         self.assertEqual(rendered["scenarios"][0]["counts"][0], {"rep_id": self.REP_ONE, "assigned_account_count": 1})
         self.assertEqual(rendered["scenarios"][0]["amount_totals"][0], {"rep_id": self.REP_ONE, "amount": "100.25"})
         self.assertEqual(rendered["scenarios"][0]["rep_pseudonymization_receipt"]["declared_rep_ids"], [self.REP_ONE, self.REP_TWO])
+        self.assertEqual(rendered["scenarios"][0]["evidence_reference_receipt"]["declared_evidence_ids"], ["E-1", "E-ROUTE"])
+        self.assertEqual(rendered["scenarios"][0]["amount_provenance"][0]["metric_owner_role_id"], "role-finance-metric-owner")
+        self.assertEqual(rendered["scenarios"][0]["constraint_register"][0]["constraint_version"], "v1")
         self.assertIn("solver_receipt", rendered["scenarios"][1])
 
     def test_exact_json_renderer_rejects_non_object(self):

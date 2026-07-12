@@ -1,6 +1,6 @@
 # Routes and coverage
 
-Use only supplied, approved route evidence. Each assigned account/rep pair needs a route ID, approved work-anchor ID, account ID, mode, departure policy, routing preference/policy, source and version, element status, fallback state, duration, distance/unit, visit frequency, and evidence ID.
+Use only supplied, approved route evidence. Each assigned account/rep pair needs an exact record containing a route ID, approved work-anchor ID, account ID, mode, departure policy, routing preference/policy, source and version matching its declared evidence row, element status, fallback state, duration, distance/unit, visit frequency, and evidence ID. Reject missing or extra fields.
 
 Do not convert Haversine or straight-line distance to drive time. Do not substitute ZIP centroids for a person's location, invent average speeds, infer visit frequency, or sum separate trips and label them an optimized weekly route.
 

@@ -111,6 +111,13 @@ def _required_fields(row, fields, label):
         raise ValueError(f"{label} missing fields: {', '.join(sorted(missing))}")
 
 
+def _exact_fields(row, fields, label):
+    _required_fields(row, fields, label)
+    extra = sorted(set(row) - set(fields))
+    if extra:
+        raise ValueError(f"{label} has unsupported fields: {', '.join(extra)}")
+
+
 def assert_no_person_fields(value, path="root"):
     """Reject disallowed person-level fields anywhere in an input packet."""
     if isinstance(value, dict):
@@ -167,7 +174,7 @@ def validate_evidence(rows):
     seen = set()
     normalized = []
     for row in rows:
-        _required_fields(row, required, "evidence row")
+        _exact_fields(row, required, "evidence row")
         assert_no_person_fields(row)
         evidence_id = _stable_identifier(row["evidence_id"], "evidence_id")
         if evidence_id in seen:
@@ -181,6 +188,58 @@ def validate_evidence(rows):
     return {"state": "VALID", "evidence_count": len(normalized), "evidence": sorted(normalized, key=lambda row: row["evidence_id"])}
 
 
+def validate_evidence_references(*, declared_evidence_rows, assignment_rows, constraint_rows, amount_rows, route_rows):
+    """Require every substantive lane to resolve only to the frozen evidence register."""
+    if not isinstance(declared_evidence_rows, list) or not declared_evidence_rows:
+        raise ValueError("declared_evidence_rows must be a non-empty validated list")
+    evidence_by_id = {row["evidence_id"]: row for row in declared_evidence_rows}
+    declared = set(evidence_by_id)
+    lane_ids = {
+        "assignment": set(),
+        "constraint": set(),
+        "amount": set(),
+        "route": set(),
+    }
+    lane_rows = {
+        "assignment": (assignment_rows, "evidence_ids", True),
+        "constraint": (constraint_rows, "evidence_id", False),
+        "amount": (amount_rows, "evidence_id", False),
+        "route": (route_rows, "evidence_id", False),
+    }
+    for lane, (rows, field, is_list) in lane_rows.items():
+        if not isinstance(rows, list):
+            raise ValueError(f"{lane}_rows must be a list")
+        for row in rows:
+            _required_fields(row, {field}, f"{lane} row")
+            values = _identifier_list(row[field], f"{lane} {field}") if is_list else [_stable_identifier(row[field], f"{lane} {field}")]
+            normalized = {_stable_identifier(value, f"{lane} {field}") for value in values}
+            unknown = sorted(normalized - declared)
+            if unknown:
+                raise ValueError(f"{lane} row references undeclared evidence IDs: {', '.join(unknown)}")
+            if lane == "constraint":
+                effective_at = _utc_timestamp(row["effective_at"], "constraint effective_at")
+                if effective_at > evidence_by_id[row["evidence_id"]]["as_of"]:
+                    raise ValueError("constraint is not effective for its referenced evidence snapshot")
+            elif lane == "amount":
+                _required_fields(row, {"source_version", "cutoff_at"}, "amount row")
+                evidence_row = evidence_by_id[row["evidence_id"]]
+                if _stable_identifier(row["source_version"], "amount source_version") != evidence_row["source_version"]:
+                    raise ValueError("amount source_version must match its referenced evidence row")
+                if _utc_timestamp(row["cutoff_at"], "amount cutoff_at") != evidence_row["as_of"]:
+                    raise ValueError("amount cutoff_at must match its referenced evidence snapshot")
+            elif lane == "route":
+                _required_fields(row, {"source_id", "source_version"}, "route row")
+                evidence_row = evidence_by_id[row["evidence_id"]]
+                if _stable_identifier(row["source_id"], "route source_id") != evidence_row["source_id"] or _stable_identifier(row["source_version"], "route source_version") != evidence_row["source_version"]:
+                    raise ValueError("route source ID/version must match its referenced evidence row")
+            lane_ids[lane].update(normalized)
+    return {
+        "state": "VALID",
+        "declared_evidence_ids": sorted(declared),
+        **{f"{lane}_evidence_ids": sorted(values) for lane, values in lane_ids.items()},
+    }
+
+
 def reconcile_assignments(*, account_ids, rep_ids, assignment_rows, shared_model=None):
     accounts = [_stable_identifier(value, "account_ids") for value in _identifier_list(account_ids, "account_ids")]
     reps = _rep_identifier_list(rep_ids, "rep_ids")
@@ -190,7 +249,7 @@ def reconcile_assignments(*, account_ids, rep_ids, assignment_rows, shared_model
     shared_model_id = None
     shared_counting_method = None
     if shared_model is not None:
-        _required_fields(shared_model, {"model_id", "approved", "role_policy_id", "counting_policy_id", "counting_method"}, "shared model")
+        _exact_fields(shared_model, {"model_id", "approved", "role_policy_id", "counting_policy_id", "counting_method"}, "shared model")
         shared_model_id = _stable_identifier(shared_model["model_id"], "model_id")
         shared_approved = _boolean(shared_model["approved"], "shared model approved")
         _stable_identifier(shared_model["role_policy_id"], "role_policy_id")
@@ -208,7 +267,7 @@ def reconcile_assignments(*, account_ids, rep_ids, assignment_rows, shared_model
     invalid_shared = set()
     normalized = []
     for row in assignment_rows:
-        _required_fields(row, {"assignment_id", "account_id", "rep_ids", "evidence_ids"}, "assignment row")
+        _exact_fields(row, {"assignment_id", "account_id", "rep_ids", "evidence_ids"}, "assignment row")
         assert_no_person_fields(row)
         assignment_id = _stable_identifier(row["assignment_id"], "assignment_id")
         account_id = _stable_identifier(row["account_id"], "account_id")
@@ -282,15 +341,33 @@ def validate_constraints(*, reconciliation, constraint_rows):
     allowed_pairs = defaultdict(set)
     known_accounts = set(reconciliation.get("account_ids", []))
     known_reps = set(reconciliation.get("rep_ids", []))
+    common_fields = {
+        "constraint_id", "constraint_version", "type", "evidence_id", "policy_id",
+        "policy_version", "effective_at", "owner_role_id", "conflict_path_id",
+    }
+    pair_fields = common_fields | {"account_id", "rep_id"}
+    count_fields = common_fields | {"rep_id", "value"}
     for row in constraint_rows:
-        _required_fields(row, {"constraint_id", "type", "evidence_id", "policy_id", "owner"}, "constraint row")
+        _required_fields(row, common_fields, "constraint row")
         assert_no_person_fields(row)
         constraint_id = _stable_identifier(row["constraint_id"], "constraint_id")
         if constraint_id in seen:
             raise ValueError("constraint IDs must be unique")
         seen.add(constraint_id)
         kind = _stable_identifier(row["type"], "constraint type").upper()
-        base = {key: _stable_identifier(row[key], key) for key in ("constraint_id", "evidence_id", "policy_id", "owner")}
+        expected_fields = pair_fields if kind in {"PINNED", "FORBIDDEN", "ALLOWED_PAIR", "RELATIONSHIP_REQUIRED"} else count_fields if kind in {"MIN_COUNT", "MAX_COUNT"} else None
+        if expected_fields is None:
+            raise ValueError(f"unsupported constraint type: {kind}")
+        _exact_fields(row, expected_fields, "constraint row")
+        base = {
+            key: _stable_identifier(row[key], key)
+            for key in (
+                "constraint_id", "constraint_version", "evidence_id", "policy_id",
+                "policy_version", "conflict_path_id",
+            )
+        }
+        base["effective_at"] = _utc_timestamp(row["effective_at"], "effective_at")
+        base["owner_role_id"] = _role_identifier(row["owner_role_id"], "owner_role_id")
         base["type"] = kind
         if kind in {"PINNED", "FORBIDDEN", "ALLOWED_PAIR", "RELATIONSHIP_REQUIRED"}:
             account_id = _stable_identifier(row.get("account_id"), "account_id")
@@ -325,8 +402,6 @@ def validate_constraints(*, reconciliation, constraint_rows):
                 upper_bounds[rep_id] = min(upper_bounds.get(rep_id, value), value)
                 if counts[rep_id] > value:
                     violations.append({"constraint_id": constraint_id, "reason": "assigned count exceeds approved maximum"})
-        else:
-            raise ValueError(f"unsupported constraint type: {kind}")
         normalized.append(base)
     for account_id, rep_id in pinned.items():
         if (account_id, rep_id) in forbidden:
@@ -367,8 +442,12 @@ def summarize_amounts(*, reconciliation, amount_rows):
     seen = set()
     by_account = {}
     bases = set()
+    amount_fields = {
+        "account_id", "amount", "currency", "period", "basis", "evidence_id",
+        "source_version", "cutoff_at", "metric_owner_role_id",
+    }
     for row in amount_rows:
-        _required_fields(row, {"account_id", "amount", "currency", "period", "basis", "evidence_id"}, "amount row")
+        _exact_fields(row, amount_fields, "amount row")
         assert_no_person_fields(row)
         account_id = _stable_identifier(row["account_id"], "account_id")
         if account_id in seen:
@@ -381,9 +460,12 @@ def summarize_amounts(*, reconciliation, amount_rows):
             "period": _stable_identifier(row["period"], "period"),
             "basis": _stable_identifier(row["basis"], "basis"),
             "evidence_id": _stable_identifier(row["evidence_id"], "evidence_id"),
+            "source_version": _stable_identifier(row["source_version"], "source_version"),
+            "cutoff_at": _utc_timestamp(row["cutoff_at"], "cutoff_at"),
+            "metric_owner_role_id": _role_identifier(row["metric_owner_role_id"], "metric_owner_role_id"),
         }
         by_account[account_id] = normalized
-        bases.add((normalized["currency"], normalized["period"], normalized["basis"]))
+        bases.add((normalized["currency"], normalized["period"], normalized["basis"], normalized["source_version"], normalized["cutoff_at"], normalized["metric_owner_role_id"]))
     missing = sorted(assigned_accounts - set(by_account))
     extra = sorted(set(by_account) - assigned_accounts)
     unknown = sorted(account_id for account_id in assigned_accounts if account_id in by_account and by_account[account_id]["amount"] is None)
@@ -403,7 +485,7 @@ def summarize_amounts(*, reconciliation, amount_rows):
             row = by_account.get(account_id)
             if row and row["amount"] is not None:
                 totals[rep_id] += row["amount"]
-    basis = None if len(bases) != 1 else dict(zip(("currency", "period", "basis"), next(iter(bases))))
+    basis = None if len(bases) != 1 else dict(zip(("currency", "period", "basis", "source_version", "cutoff_at", "metric_owner_role_id"), next(iter(bases))))
     return {
         "state": state,
         "basis": basis,
@@ -412,6 +494,16 @@ def summarize_amounts(*, reconciliation, amount_rows):
         "missing_account_ids": missing,
         "extra_account_ids": extra,
         "unknown_amount_account_ids": unknown,
+        "provenance": [
+            {
+                "account_id": row["account_id"],
+                "evidence_id": row["evidence_id"],
+                "source_version": row["source_version"],
+                "cutoff_at": row["cutoff_at"],
+                "metric_owner_role_id": row["metric_owner_role_id"],
+            }
+            for row in sorted(by_account.values(), key=lambda item: item["account_id"])
+        ],
         "per_rep_totals": [
             {"rep_id": rep_id, "amount": totals[rep_id] if basis else None}
             for rep_id in sorted(reconciliation.get("rep_ids", []))
@@ -429,7 +521,7 @@ def summarize_routes(*, reconciliation, route_rows):
     invalid_status_pairs = set()
     for row in route_rows:
         required = {"route_id", "account_id", "rep_id", "duration_minutes", "distance", "distance_unit", "mode", "work_anchor_id", "departure_policy_id", "routing_policy_id", "source_id", "source_version", "status", "fallback", "visit_frequency", "evidence_id"}
-        _required_fields(row, required, "route row")
+        _exact_fields(row, required, "route row")
         assert_no_person_fields(row)
         route_id = _stable_identifier(row["route_id"], "route_id")
         if route_id in seen_routes:
@@ -459,7 +551,7 @@ def summarize_routes(*, reconciliation, route_rows):
         if normalized["status"] != "OK" or normalized["fallback"] not in {"NONE", "APPROVED"} or normalized["duration_minutes"] is None or normalized["distance"] is None:
             invalid_status_pairs.add(pair)
         by_pair[pair] = normalized
-        policy_keys.add((normalized["mode"], normalized["departure_policy_id"], normalized["routing_policy_id"], normalized["distance_unit"]))
+        policy_keys.add((normalized["mode"], normalized["departure_policy_id"], normalized["routing_policy_id"], normalized["distance_unit"], normalized["source_id"], normalized["source_version"]))
     missing_pairs = sorted(pairs - set(by_pair))
     extra_pairs = sorted(set(by_pair) - pairs)
     usable_pairs = pairs & set(by_pair) - invalid_status_pairs
@@ -488,7 +580,7 @@ def summarize_routes(*, reconciliation, route_rows):
         "missing_pairs": [{"account_id": account_id, "rep_id": rep_id} for account_id, rep_id in missing_pairs],
         "extra_pairs": [{"account_id": account_id, "rep_id": rep_id} for account_id, rep_id in extra_pairs],
         "invalid_status_pairs": [{"account_id": account_id, "rep_id": rep_id} for account_id, rep_id in sorted(invalid_status_pairs)],
-        "route_policy": None if len(policy_keys) != 1 else dict(zip(("mode", "departure_policy_id", "routing_policy_id", "distance_unit"), next(iter(policy_keys)))),
+        "route_policy": None if len(policy_keys) != 1 else dict(zip(("mode", "departure_policy_id", "routing_policy_id", "distance_unit", "source_id", "source_version"), next(iter(policy_keys)))),
         "per_rep_totals": [
             {
                 "rep_id": rep_id,
@@ -505,7 +597,7 @@ def validate_solver_receipt(receipt):
     if receipt is None:
         return {"state": "NOT_RUN", "claimed_optimal": False}
     required = {"formulation_id", "objective_normalization_id", "solver", "solver_version", "seed", "status", "primal_bound", "dual_bound", "gap", "tolerance", "time_limit", "memory_limit", "determinism", "constraint_violation_count", "tie_policy_id"}
-    _required_fields(receipt, required, "solver receipt")
+    _exact_fields(receipt, required, "solver receipt")
     assert_no_person_fields(receipt)
     clean = {field: receipt[field] for field in required}
     for field in ("formulation_id", "objective_normalization_id", "solver", "solver_version", "time_limit", "memory_limit", "determinism", "tie_policy_id"):
@@ -536,6 +628,13 @@ def scenario_review(*, scenario_id, account_ids, rep_ids, assignment_rows, evide
     if workforce_review_state not in {"APPROVED", "REVIEW_REQUIRED", "IDENTITY_REVIEW", "POLICY_REQUIRED"}:
         raise ValueError("unsupported workforce review state")
     evidence = validate_evidence(evidence_rows)
+    evidence_references = validate_evidence_references(
+        declared_evidence_rows=evidence["evidence"],
+        assignment_rows=assignment_rows,
+        constraint_rows=constraint_rows,
+        amount_rows=amount_rows,
+        route_rows=route_rows,
+    )
     pseudonymization = validate_rep_pseudonymization_receipt(rep_pseudonymization_receipt, rep_ids)
     assignments = reconcile_assignments(account_ids=account_ids, rep_ids=rep_ids, assignment_rows=assignment_rows, shared_model=shared_model)
     constraints = validate_constraints(reconciliation=assignments, constraint_rows=constraint_rows)
@@ -557,6 +656,7 @@ def scenario_review(*, scenario_id, account_ids, rep_ids, assignment_rows, evide
         "scenario_id": scenario_id,
         "state": overall,
         "evidence": evidence,
+        "evidence_reference_receipt": evidence_references,
         "rep_pseudonymization_receipt": pseudonymization,
         "assignments": assignments,
         "constraints": constraints,
@@ -671,10 +771,13 @@ def build_downstream_receipt(*, receipt_id, cutoff, timezone, policy_ids, scenar
             "workforce_review_state": review["workforce_review_state"],
             "rep_pseudonymization_receipt": review["rep_pseudonymization_receipt"],
             "evidence_ids": [row["evidence_id"] for row in review["evidence"]["evidence"]],
+            "evidence_reference_receipt": review["evidence_reference_receipt"],
             "counts": review["counts"],
+            "constraint_register": review["constraints"]["constraints"],
             "constraint_violations": review["constraints"]["violations"],
             "constraint_conflicts": review["constraints"]["conflicts"],
             "amount_basis": review["amounts"]["basis"],
+            "amount_provenance": review["amounts"]["provenance"],
             "amount_coverage": {"covered_account_count": review["amounts"]["covered_account_count"], "assigned_account_count": review["amounts"]["assigned_account_count"], "missing_account_ids": review["amounts"]["missing_account_ids"], "extra_account_ids": review["amounts"]["extra_account_ids"], "unknown_amount_account_ids": review["amounts"]["unknown_amount_account_ids"]},
             "amount_totals": review["amounts"]["per_rep_totals"],
             "route_policy": review["routes"]["route_policy"],

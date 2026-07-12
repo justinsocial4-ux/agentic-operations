@@ -1,6 +1,6 @@
 # Amount evidence
 
-Treat each amount as a sourced business measure. Require account ID, exact value, currency, period, basis, evidence ID, source version, cutoff, and finance/metric owner.
+Treat each amount as a sourced business measure. Require the exact type-specific record: account ID, exact value, currency, period, basis, declared evidence ID, source version matching that evidence, cutoff matching the evidence snapshot, and metric-owner role ID. Reject missing or extra fields and preserve the nonnumeric provenance in the output receipt.
 
 Keep ARR, ACV, bookings, recognized revenue, open pipeline, forecast, quoted value, and customer-defined potential separate. Never substitute one for another. Do not impute missing amounts with a median, zero, neutral score, industry value, or model estimate.
 

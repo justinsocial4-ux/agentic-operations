@@ -43,7 +43,7 @@ Validate supplied candidate assignments without inventing an optimal, fair, bala
 4. Require the complete in-scope account and rep populations. Preserve excluded, unknown, missing, duplicate, unassigned, conflicting, overlay, and shared/team records. Every declared in-scope rep must appear in every per-rep summary, including a zero-assignment row.
 5. Accept rep IDs only as `rep-` plus 32 lowercase hexadecimal characters and require a separate approved receipt bound to the exact declared rep set. Reject readable prefixes, names, emails, free text, home locations, protected traits, manager narratives, content, and historical quota, discipline, or performance signals.
 6. Reconcile every in-scope account exactly once. Permit multiple assigned reps only when a named, approved shared/team-ownership model defines roles and counting treatment.
-7. Apply only customer-owned hard constraints with IDs, versions, evidence, effective times, owners, and conflict handling. Never invent universal minimums, maximums, weights, thresholds, tiers, or fairness rules.
+7. Apply only customer-owned hard constraints with constraint and policy IDs/versions, a declared evidence ID, effective time, owner-role ID, and conflict-path ID. Never invent universal minimums, maximums, weights, thresholds, tiers, or fairness rules.
 8. Keep amount bases separate. Require exact non-negative values, currency, period, basis, source, and record coverage. Never impute missing amounts or sum unlike bases, periods, or currencies.
 9. Use route durations or distances only from approved supplied route evidence. Require mode, approved work anchor, departure/routing policy, source/version, element status, fallback state, and visit frequency before computing totals.
 10. Never convert straight-line distance into drive time, invent visit frequency, treat a ZIP centroid as a person location, or call separate anchor-to-account trips a weekly route.
@@ -69,7 +69,7 @@ Return `POLICY_REQUIRED`, `SOURCE_REQUIRED`, `IDENTITY_REVIEW`, `INCOMPLETE_POPU
 1. **Freeze scope.** Assign stable receipt, policy, evidence, population, and scenario IDs with cutoff and timezone.
 2. **Reconcile populations.** Validate the exact opaque rep format, the approved population-bound pseudonymization receipt, current state, exclusions, overlays, and shared/team ownership.
 3. **Validate assignments.** Prove exact account coverage and reject unknown, duplicate, missing, or unsupported assignments.
-4. **Check constraints.** Evaluate only the approved allowed, forbidden, pinned, count-bound, relationship, and shared/team rules.
+4. **Check evidence and constraints.** Reject every assignment, constraint, amount, or route evidence reference absent from the frozen evidence register. Evaluate only the approved allowed, forbidden, pinned, count-bound, relationship, and shared/team rules with complete provenance.
 5. **Build evidence summaries.** Use the helper for complete-population per-rep counts, same-basis amounts, supplied-route coverage/totals, and solver receipts. Keep zero-assignment and unresolved rows explicit.
 6. **Compare without ranking.** Preserve moved accounts, missingness, incompatibilities, violations, and workforce review state.
 7. **Prepare human review.** Present decision questions and approval gaps; do not select or implement a scenario.
@@ -77,7 +77,7 @@ Return `POLICY_REQUIRED`, `SOURCE_REQUIRED`, `IDENTITY_REVIEW`, `INCOMPLETE_POPU
 
 ## Output Contract
 
-Return exactly one artifact: the raw JSON string produced by `render_receipt_json(build_downstream_receipt(...))`. It contains the policy, population-bound rep-pseudonymization, evidence, complete-population count/amount/route, constraint, solver, comparison, approval, and no-action receipts. Every output number is helper-owned and appears only in that rendering. Do not wrap, restyle, summarize, duplicate, or correct it in model prose.
+Return exactly one artifact: the raw JSON string produced by `render_receipt_json(build_downstream_receipt(...))`. It contains the policy, population-bound rep-pseudonymization, frozen evidence register and lane-reference receipt, complete-population count/amount/route, fully versioned constraint, solver, comparison, approval, and no-action receipts. Every output number is helper-owned and appears only in that rendering. Do not wrap, restyle, summarize, duplicate, or correct it in model prose.
 
 ## Failure Boundary
 
