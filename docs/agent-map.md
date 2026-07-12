@@ -58,7 +58,7 @@ reports, bad forecasts, and wasted sales motion.
 
 | Agent | Plain-English job |
 |---|---|
-| [Integration Health Agent](../agents/tech-stack-operations/revops-integration-health/SKILL.md) | Monitors API and system connection health. |
+| [Integration Health Agent](../agents/tech-stack-operations/revops-integration-health/SKILL.md) | Reviews supplied integration observations against customer-authored contracts. |
 | [Tool Adoption Agent](../agents/tech-stack-operations/revops-tool-adoption/SKILL.md) | Finds underused tools and license waste. |
 | [Permission Audit Agent](../agents/tech-stack-operations/revops-permission-audit/SKILL.md) | Flags risky permissions, inactive users, and audit gaps. |
 | [Vendor Performance Agent](../agents/tech-stack-operations/revops-vendor-performance/SKILL.md) | Scores vendors by SLA, support, adoption, and renewal risk. |
