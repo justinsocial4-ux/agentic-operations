@@ -29,8 +29,8 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def evidence(self):
         return [
-            {"evidence_id": "E-1", "source_id": "crm-export", "source_version": "v7", "extracted_at": "2026-07-10T12:00:00Z", "as_of": "2026-07-10T11:59:59Z", "policy_id": "SRC-2", "purpose": "territory scenario review", "access_scope": "aggregate-and-pseudonymous"},
-            {"evidence_id": "E-ROUTE", "source_id": "routes-api", "source_version": "2026-07", "extracted_at": "2026-07-10T12:00:00Z", "as_of": "2026-07-10T11:59:59Z", "policy_id": "ROUTE-SRC-1", "purpose": "territory route evidence review", "access_scope": "pseudonymous-work-anchor-routes"},
+            {"evidence_id": "E-1", "source_id": "crm-export", "source_version": "v7", "extracted_at": "2026-07-10T12:00:00Z", "as_of": "2026-07-10T11:59:59Z", "policy_id": "SRC-2", "purpose": "purpose-11111111111111111111111111111111", "access_scope": "access-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+            {"evidence_id": "E-ROUTE", "source_id": "routes-api", "source_version": "2026-07", "extracted_at": "2026-07-10T12:00:00Z", "as_of": "2026-07-10T11:59:59Z", "policy_id": "ROUTE-SRC-1", "purpose": "purpose-22222222222222222222222222222222", "access_scope": "access-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"},
         ]
 
     def assignments(self, moved=False):
@@ -111,6 +111,42 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def test_evidence_missing_provenance_fails(self):
         rows = self.evidence(); rows[0]["as_of"] = ""
+        with self.assertRaises(ValueError): validate_evidence(rows)
+
+    def test_evidence_rejects_impossible_calendar_date(self):
+        rows = self.evidence(); rows[0]["as_of"] = "2026-02-30T00:00:00Z"
+        with self.assertRaises(ValueError): validate_evidence(rows)
+
+    def test_evidence_rejects_non_leap_february_29(self):
+        rows = self.evidence(); rows[0]["extracted_at"] = "2025-02-29T00:00:00Z"
+        with self.assertRaises(ValueError): validate_evidence(rows)
+
+    def test_evidence_accepts_real_leap_day(self):
+        rows = self.evidence(); rows[0]["as_of"] = "2024-02-29T00:00:00Z"
+        self.assertEqual(validate_evidence(rows)["state"], "VALID")
+
+    def test_evidence_rejects_direct_name_in_purpose(self):
+        rows = self.evidence(); rows[0]["purpose"] = "Alice Smith"
+        with self.assertRaises(ValueError): validate_evidence(rows)
+
+    def test_evidence_rejects_structurally_different_name_in_access_scope(self):
+        rows = self.evidence(); rows[0]["access_scope"] = "Jordan Lee"
+        with self.assertRaises(ValueError): validate_evidence(rows)
+
+    def test_evidence_rejects_email_in_purpose(self):
+        rows = self.evidence(); rows[0]["purpose"] = "alice@example.test"
+        with self.assertRaises(ValueError): validate_evidence(rows)
+
+    def test_evidence_rejects_email_in_access_scope(self):
+        rows = self.evidence(); rows[0]["access_scope"] = "jordan.lee@example.test"
+        with self.assertRaises(ValueError): validate_evidence(rows)
+
+    def test_evidence_rejects_dash_disguised_name_in_purpose(self):
+        rows = self.evidence(); rows[0]["purpose"] = "Alice-Smith"
+        with self.assertRaises(ValueError): validate_evidence(rows)
+
+    def test_evidence_rejects_underscore_disguised_name_in_access_scope(self):
+        rows = self.evidence(); rows[0]["access_scope"] = "jordan_lee"
         with self.assertRaises(ValueError): validate_evidence(rows)
 
     def test_person_fields_fail_at_any_depth(self):
@@ -494,7 +530,7 @@ class TerritoryEvidenceTests(unittest.TestCase):
         self.assertEqual(assignments, original)
 
     def comparison(self):
-        return compare_scenarios(scenario_reviews=[self.review("S-2", True), self.review("S-1")], current_assignment_rows=self.assignments(), same_population=True, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
+        return compare_scenarios(scenario_reviews=[self.review("S-2", True), self.review("S-1")], current_assignment_rows=self.assignments(), current_evidence_rows=self.evidence(), same_population=True, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
 
     def test_comparison_is_non_ranked_and_sorted(self):
         result = self.comparison()
@@ -504,18 +540,29 @@ class TerritoryEvidenceTests(unittest.TestCase):
         result = self.comparison()
         self.assertEqual(result["scenarios"][1]["moved_account_ids"], ["A-1"])
 
+    def test_comparison_rejects_undeclared_current_assignment_evidence(self):
+        rows = self.assignments(); rows[0]["evidence_ids"] = ["E-ROGUE"]
+        with self.assertRaises(ValueError):
+            compare_scenarios(scenario_reviews=[self.review("S-1"), self.review("S-2")], current_assignment_rows=rows, current_evidence_rows=self.evidence(), same_population=True, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
+
+    def test_comparison_preserves_current_assignment_evidence_receipt(self):
+        result = self.comparison()
+        self.assertEqual(result["current_assignment_evidence_ids"], ["E-1", "E-ROUTE"])
+        self.assertEqual(result["current_assignment_evidence_reference_receipt"]["assignment_evidence_ids"], ["E-1"])
+        self.assertEqual(result["current_assignment_evidence"][0]["source_version"], "v7")
+
     def test_comparison_preserves_amount_route_and_solver_receipts(self):
         row = self.comparison()["scenarios"][0]
         self.assertEqual((row["amount_totals"][0]["amount"], row["route_totals"][0]["duration_minutes"], row["solver_receipt"]["state"]), (Decimal("100.25"), Decimal("60"), "OPTIMAL"))
 
     def test_changed_population_is_incomparable(self):
-        result = compare_scenarios(scenario_reviews=[self.review("S-1"), self.review("S-2")], current_assignment_rows=self.assignments(), same_population=False, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
+        result = compare_scenarios(scenario_reviews=[self.review("S-1"), self.review("S-2")], current_assignment_rows=self.assignments(), current_evidence_rows=self.evidence(), same_population=False, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
         self.assertEqual(result["state"], "INCOMPARABLE")
 
     def test_declared_same_population_cannot_hide_actual_difference(self):
         second = self.review("S-2")
         second["assignments"]["account_ids"] = ["A-1", "A-2", "A-3"]
-        result = compare_scenarios(scenario_reviews=[self.review("S-1"), second], current_assignment_rows=self.assignments(), same_population=True, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
+        result = compare_scenarios(scenario_reviews=[self.review("S-1"), second], current_assignment_rows=self.assignments(), current_evidence_rows=self.evidence(), same_population=True, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
         self.assertEqual((result["state"], result["actual_checks"]["same_population"]), ("INCOMPARABLE", False))
 
     def test_receipt_is_bounded(self):
@@ -534,7 +581,7 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def test_decision_review_rejects_incomparable_evidence(self):
         reviews = [self.review("S-1"), self.review("S-2", workforce="REVIEW_REQUIRED")]
-        comparison = compare_scenarios(scenario_reviews=reviews, current_assignment_rows=self.assignments(), same_population=True, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
+        comparison = compare_scenarios(scenario_reviews=reviews, current_assignment_rows=self.assignments(), current_evidence_rows=self.evidence(), same_population=True, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
         with self.assertRaises(ValueError): build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=reviews, comparison=comparison, reviewer="role-reviewer", approver="role-approver", decision_rule_id="DEC-1", approval_state="APPROVED_FOR_DECISION_REVIEW")
 
     def test_exact_json_renderer_preserves_nested_field_names(self):
@@ -547,6 +594,8 @@ class TerritoryEvidenceTests(unittest.TestCase):
         self.assertEqual(rendered["scenarios"][0]["evidence_reference_receipt"]["declared_evidence_ids"], ["E-1", "E-ROUTE"])
         self.assertEqual(rendered["scenarios"][0]["amount_provenance"][0]["metric_owner_role_id"], "role-finance-metric-owner")
         self.assertEqual(rendered["scenarios"][0]["constraint_register"][0]["constraint_version"], "v1")
+        self.assertEqual(rendered["current_assignment_evidence"][0]["source_version"], "v7")
+        self.assertEqual(rendered["current_assignment_evidence_reference_receipt"]["assignment_evidence_ids"], ["E-1"])
         self.assertIn("solver_receipt", rendered["scenarios"][1])
 
     def test_exact_json_renderer_rejects_non_object(self):

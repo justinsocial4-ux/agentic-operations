@@ -2,7 +2,7 @@
 
 ## Required receipt
 
-Freeze the review before calculation: purpose, prohibited uses, scenario IDs, current-assignment snapshot, in-scope account and rep population IDs/hashes, cutoff, observation window, timezone, source versions, and the owners of scope, population, constraint, amount, route, workforce, comparison, solver, and decision policies.
+Freeze the review before calculation: opaque 128-bit purpose and access-scope IDs, prohibited uses, scenario IDs, current-assignment snapshot and its separate complete evidence register, in-scope account and rep population IDs/hashes, real second-precision UTC cutoff/observation timestamps, timezone, source versions, and the owners of scope, population, constraint, amount, route, workforce, comparison, solver, and decision policies.
 
 Do not silently expand from a region, segment, product, overlay, or team to the whole business. An account or rep excluded by policy stays visible with the approved exclusion reason and evidence ID.
 

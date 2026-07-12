@@ -69,7 +69,7 @@ Return `POLICY_REQUIRED`, `SOURCE_REQUIRED`, `IDENTITY_REVIEW`, `INCOMPLETE_POPU
 1. **Freeze scope.** Assign stable receipt, policy, evidence, population, and scenario IDs with cutoff and timezone.
 2. **Reconcile populations.** Validate the exact opaque rep format, the approved population-bound pseudonymization receipt, current state, exclusions, overlays, and shared/team ownership.
 3. **Validate assignments.** Prove exact account coverage and reject unknown, duplicate, missing, or unsupported assignments.
-4. **Check evidence and constraints.** Reject every assignment, constraint, amount, or route evidence reference absent from the frozen evidence register. Evaluate only the approved allowed, forbidden, pinned, count-bound, relationship, and shared/team rules with complete provenance.
+4. **Check evidence and constraints.** Require a separate frozen evidence register for the current-assignment snapshot, then reject every current or candidate assignment, constraint, amount, or route evidence reference absent from its declared register. Evidence timestamps must be real second-precision UTC calendar values; evidence purpose and access scope must be opaque 128-bit IDs, never names, email addresses, or narrative tokens. Evaluate only the approved allowed, forbidden, pinned, count-bound, relationship, and shared/team rules with complete provenance.
 5. **Build evidence summaries.** Use the helper for complete-population per-rep counts, same-basis amounts, supplied-route coverage/totals, and solver receipts. Keep zero-assignment and unresolved rows explicit.
 6. **Compare without ranking.** Preserve moved accounts, missingness, incompatibilities, violations, and workforce review state.
 7. **Prepare human review.** Present decision questions and approval gaps; do not select or implement a scenario.
@@ -77,7 +77,7 @@ Return `POLICY_REQUIRED`, `SOURCE_REQUIRED`, `IDENTITY_REVIEW`, `INCOMPLETE_POPU
 
 ## Output Contract
 
-Return exactly one artifact: the raw JSON string produced by `render_receipt_json(build_downstream_receipt(...))`. It contains the policy, population-bound rep-pseudonymization, frozen evidence register and lane-reference receipt, complete-population count/amount/route, fully versioned constraint, solver, comparison, approval, and no-action receipts. Every output number is helper-owned and appears only in that rendering. Do not wrap, restyle, summarize, duplicate, or correct it in model prose.
+Return exactly one artifact: the raw JSON string produced by `render_receipt_json(build_downstream_receipt(...))`. It contains the policy, population-bound rep-pseudonymization, frozen current-assignment and candidate evidence-register receipts, complete-population count/amount/route, fully versioned constraint, solver, comparison, approval, and no-action receipts. Every output number is helper-owned and appears only in that rendering. Do not wrap, restyle, summarize, duplicate, or correct it in model prose.
 
 ## Failure Boundary
 

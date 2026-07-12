@@ -2,6 +2,7 @@
 """Deterministic, read-only validation for supplied territory scenarios."""
 
 from collections import Counter, defaultdict
+from datetime import datetime
 from decimal import Decimal, InvalidOperation
 import json
 import re
@@ -16,6 +17,8 @@ PROHIBITED_PERSON_FIELDS = {
 SOLVER_STATUSES = {"OPTIMAL", "FEASIBLE", "INFEASIBLE", "UNBOUNDED", "LIMIT", "UNDETERMINED", "NOT_RUN"}
 REP_ID_RE = re.compile(r"^rep-[0-9a-f]{32}$")
 OPAQUE_RECEIPT_ID_RE = re.compile(r"^receipt-[0-9a-f]{32}$")
+OPAQUE_PURPOSE_ID_RE = re.compile(r"^purpose-[0-9a-f]{32}$")
+OPAQUE_ACCESS_SCOPE_ID_RE = re.compile(r"^access-[0-9a-f]{32}$")
 STABLE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
 UTC_TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
 TIMEZONE_RE = re.compile(r"^(?:UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$")
@@ -41,9 +44,21 @@ def _role_identifier(value, name):
     return value
 
 
+def _evidence_metadata_identifier(value, name):
+    pattern = OPAQUE_PURPOSE_ID_RE if name == "purpose" else OPAQUE_ACCESS_SCOPE_ID_RE
+    prefix = "purpose-" if name == "purpose" else "access-"
+    if not isinstance(value, str) or not pattern.fullmatch(value):
+        raise ValueError(f"{name} must be {prefix} followed by 32 lowercase hexadecimal characters")
+    return value
+
+
 def _utc_timestamp(value, name):
     if not isinstance(value, str) or not UTC_TIMESTAMP_RE.fullmatch(value):
         raise ValueError(f"{name} must be a second-precision UTC timestamp ending in Z")
+    try:
+        datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as error:
+        raise ValueError(f"{name} must contain a real Gregorian calendar date and time") from error
     return value
 
 
@@ -179,10 +194,14 @@ def validate_evidence(rows):
         evidence_id = _stable_identifier(row["evidence_id"], "evidence_id")
         if evidence_id in seen:
             raise ValueError("evidence IDs must be unique")
-        clean = {
-            field: (_identifier(row[field], field) if field in {"purpose", "access_scope"} else _stable_identifier(row[field], field))
-            for field in sorted(required)
-        }
+        clean = {}
+        for field in sorted(required):
+            if field in {"extracted_at", "as_of"}:
+                clean[field] = _utc_timestamp(row[field], field)
+            elif field in {"purpose", "access_scope"}:
+                clean[field] = _evidence_metadata_identifier(row[field], field)
+            else:
+                clean[field] = _stable_identifier(row[field], field)
         seen.add(evidence_id)
         normalized.append(clean)
     return {"state": "VALID", "evidence_count": len(normalized), "evidence": sorted(normalized, key=lambda row: row["evidence_id"])}
@@ -669,7 +688,7 @@ def scenario_review(*, scenario_id, account_ids, rep_ids, assignment_rows, evide
     }
 
 
-def compare_scenarios(*, scenario_reviews, current_assignment_rows, same_population, same_policies, same_constraints, same_amount_basis, same_route_policy, current_shared_model=None):
+def compare_scenarios(*, scenario_reviews, current_assignment_rows, current_evidence_rows, same_population, same_policies, same_constraints, same_amount_basis, same_route_policy, current_shared_model=None):
     if not isinstance(scenario_reviews, list) or len(scenario_reviews) < 2:
         raise ValueError("at least two scenario reviews are required")
     flags = {"same_population": same_population, "same_policies": same_policies, "same_constraints": same_constraints, "same_amount_basis": same_amount_basis, "same_route_policy": same_route_policy}
@@ -708,6 +727,14 @@ def compare_scenarios(*, scenario_reviews, current_assignment_rows, same_populat
         assignment_rows=current_assignment_rows,
         shared_model=current_shared_model,
     )
+    current_evidence = validate_evidence(current_evidence_rows)
+    current_evidence_references = validate_evidence_references(
+        declared_evidence_rows=current_evidence["evidence"],
+        assignment_rows=current_assignment_rows,
+        constraint_rows=[],
+        amount_rows=[],
+        route_rows=[],
+    )
     current_map = {row["account_id"]: tuple(row["rep_ids"]) for row in current["assignments"]}
     rows = []
     for review in sorted(scenario_reviews, key=lambda item: item["scenario_id"]):
@@ -734,7 +761,18 @@ def compare_scenarios(*, scenario_reviews, current_assignment_rows, same_populat
             "solver_receipt": review["solver"],
         })
     comparable = all(flags.values()) and all(actual_checks.values()) and current["state"] == "VALID" and all(review["state"] == "VALID" for review in scenario_reviews)
-    return {"state": "VALID" if comparable else "INCOMPARABLE", "ranked": False, "selected_scenario_id": None, "declared_flags": flags, "actual_checks": actual_checks, "scenarios": rows, "boundary": BOUNDARY}
+    return {
+        "state": "VALID" if comparable else "INCOMPARABLE",
+        "ranked": False,
+        "selected_scenario_id": None,
+        "declared_flags": flags,
+        "actual_checks": actual_checks,
+        "current_assignment_evidence": current_evidence["evidence"],
+        "current_assignment_evidence_ids": [row["evidence_id"] for row in current_evidence["evidence"]],
+        "current_assignment_evidence_reference_receipt": current_evidence_references,
+        "scenarios": rows,
+        "boundary": BOUNDARY,
+    }
 
 
 def build_downstream_receipt(*, receipt_id, cutoff, timezone, policy_ids, scenario_reviews, comparison, reviewer, approver, decision_rule_id=None, approval_state="APPROVAL_REQUIRED"):
@@ -792,6 +830,9 @@ def build_downstream_receipt(*, receipt_id, cutoff, timezone, policy_ids, scenar
         "policy_ids": clean_policies,
         "scenarios": scenario_rows,
         "comparison_state": comparison["state"],
+        "current_assignment_evidence": comparison["current_assignment_evidence"],
+        "current_assignment_evidence_ids": comparison["current_assignment_evidence_ids"],
+        "current_assignment_evidence_reference_receipt": comparison["current_assignment_evidence_reference_receipt"],
         "ranked": False,
         "selected_scenario_id": None,
         "decision_rule_id": _stable_identifier(decision_rule_id, "decision_rule_id") if decision_rule_id else None,
