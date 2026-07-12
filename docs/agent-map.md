@@ -52,7 +52,7 @@ reports, bad forecasts, and wasted sales motion.
 | Agent | Plain-English job |
 |---|---|
 | [Customer Retention Risk Agent](../agents/customer-success-operations/revops-customer-retention-risk/SKILL.md) | Reviews separate customer evidence lanes against approved rules without predicting churn or taking action. |
-| [QBR Prep Agent](../agents/customer-success-operations/revops-qbr-prep/SKILL.md) | Prepares account review materials from CRM, product, and support signals. |
+| [QBR Prep Agent](../agents/customer-success-operations/revops-qbr-prep/SKILL.md) | Assembles approved pseudonymous metrics, comparisons, and claim receipts into a human-review QBR evidence packet. |
 
 ## Tech Stack Operations
 
