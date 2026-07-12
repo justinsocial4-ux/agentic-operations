@@ -85,6 +85,7 @@ reports, bad forecasts, and wasted sales motion.
 |---|---|
 | [CPQ Assist Agent](../agents/pricing-deal-strategy/revops-cpq-assist/SKILL.md) | Reviews exact quote, catalog, pricing-rule, and approval-process evidence without recommending products or taking action. |
 | [Competitive Price Evidence Review](../agents/pricing-deal-strategy/revops-competitive-pricing/SKILL.md) | Calculates exact same-basis price differences without recommending prices, discounts, negotiations, alerts, or CRM actions. |
+| [Internal Pricing Scenario Evidence Review](../agents/pricing-deal-strategy/revops-pricing-strategy/SKILL.md) | Calculates exact approved internal-versus-scenario price differences without inferring demand, recommending a price, or taking action. |
 
 ## Capacity And Planning
 
