@@ -44,7 +44,7 @@ reports, bad forecasts, and wasted sales motion.
 
 | Agent | Plain-English job |
 |---|---|
-| [Campaign Performance Agent](../agents/marketing-operations/revops-campaign-performance/SKILL.md) | Pulls campaign metrics into one view and flags waste. |
+| [Campaign Performance Agent](../agents/marketing-operations/revops-campaign-performance/SKILL.md) | Reviews complete pseudonymous campaign measurements under exact same-basis contracts without ranking or budget action. |
 | [Email Deliverability Agent](../agents/marketing-operations/revops-email-deliverability/SKILL.md) | Monitors sender reputation, authentication, bounces, and spam risk. |
 
 ## Customer Success Operations
