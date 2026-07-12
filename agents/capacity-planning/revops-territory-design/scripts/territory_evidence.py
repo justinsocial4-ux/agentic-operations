@@ -4,6 +4,7 @@
 from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 import json
+import re
 
 
 BOUNDARY = "NO TERRITORY OR OWNERSHIP CHANGE / NO QUOTA OR WORKFORCE ACTION"
@@ -13,6 +14,11 @@ PROHIBITED_PERSON_FIELDS = {
     "quota_attainment", "discipline", "attrition_risk", "productivity_score",
 }
 SOLVER_STATUSES = {"OPTIMAL", "FEASIBLE", "INFEASIBLE", "UNBOUNDED", "LIMIT", "UNDETERMINED", "NOT_RUN"}
+REP_ID_RE = re.compile(r"^rep-[0-9a-f]{32}$")
+OPAQUE_RECEIPT_ID_RE = re.compile(r"^receipt-[0-9a-f]{32}$")
+STABLE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._:-]*$")
+UTC_TIMESTAMP_RE = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$")
+TIMEZONE_RE = re.compile(r"^(?:UTC|[A-Za-z_]+(?:/[A-Za-z0-9_+-]+)+)$")
 
 
 def _identifier(value, name):
@@ -21,12 +27,53 @@ def _identifier(value, name):
     return value.strip()
 
 
+def _stable_identifier(value, name):
+    value = _identifier(value, name)
+    if not STABLE_ID_RE.fullmatch(value):
+        raise ValueError(f"{name} must be a stable ID token without whitespace, email syntax, or free text")
+    return value
+
+
+def _role_identifier(value, name):
+    value = _stable_identifier(value, name)
+    if not value.startswith("role-"):
+        raise ValueError(f"{name} must begin with role-")
+    return value
+
+
+def _utc_timestamp(value, name):
+    if not isinstance(value, str) or not UTC_TIMESTAMP_RE.fullmatch(value):
+        raise ValueError(f"{name} must be a second-precision UTC timestamp ending in Z")
+    return value
+
+
+def _timezone(value, name):
+    if not isinstance(value, str) or not TIMEZONE_RE.fullmatch(value):
+        raise ValueError(f"{name} must be UTC or an IANA timezone ID")
+    return value
+
+
+def _rep_identifier(value, name):
+    if not isinstance(value, str) or not REP_ID_RE.fullmatch(value):
+        raise ValueError(f"{name} must be rep- followed by 32 lowercase hexadecimal characters")
+    return value
+
+
 def _identifier_list(values, name, allow_empty=False):
     if not isinstance(values, list) or (not values and not allow_empty):
         raise ValueError(f"{name} must be a {'list' if allow_empty else 'non-empty list'}")
     cleaned = [_identifier(value, name) for value in values]
     if len(cleaned) != len(set(cleaned)):
         raise ValueError(f"{name} must contain unique IDs")
+    return cleaned
+
+
+def _rep_identifier_list(values, name, allow_empty=False):
+    if not isinstance(values, list) or (not values and not allow_empty):
+        raise ValueError(f"{name} must be a {'list' if allow_empty else 'non-empty list'}")
+    cleaned = [_rep_identifier(value, name) for value in values]
+    if len(cleaned) != len(set(cleaned)):
+        raise ValueError(f"{name} must contain unique opaque rep IDs")
     return cleaned
 
 
@@ -81,6 +128,35 @@ def assert_no_person_fields(value, path="root"):
     return {"state": "VALID"}
 
 
+def validate_rep_pseudonymization_receipt(receipt, rep_ids):
+    """Require a separate approved receipt bound to the exact opaque rep population."""
+    required = {
+        "receipt_id", "population_id", "method_id", "namespace_id", "policy_id",
+        "owner_role_id", "approved", "declared_rep_ids",
+    }
+    if not isinstance(receipt, dict) or set(receipt) != required:
+        raise ValueError("rep pseudonymization receipt must contain exactly the required fields")
+    receipt_id = receipt["receipt_id"]
+    if not isinstance(receipt_id, str) or not OPAQUE_RECEIPT_ID_RE.fullmatch(receipt_id):
+        raise ValueError("rep pseudonymization receipt_id must be receipt- followed by 32 lowercase hexadecimal characters")
+    declared_rep_ids = sorted(_rep_identifier_list(receipt["declared_rep_ids"], "pseudonymization declared_rep_ids"))
+    expected_rep_ids = sorted(_rep_identifier_list(rep_ids, "rep_ids"))
+    if declared_rep_ids != expected_rep_ids:
+        raise ValueError("rep pseudonymization receipt population must equal the declared rep population")
+    if _boolean(receipt["approved"], "pseudonymization approved") is not True:
+        raise ValueError("rep pseudonymization receipt must be approved")
+    return {
+        "receipt_id": receipt_id,
+        "population_id": _stable_identifier(receipt["population_id"], "pseudonymization population_id"),
+        "method_id": _stable_identifier(receipt["method_id"], "pseudonymization method_id"),
+        "namespace_id": _stable_identifier(receipt["namespace_id"], "pseudonymization namespace_id"),
+        "policy_id": _stable_identifier(receipt["policy_id"], "pseudonymization policy_id"),
+        "owner_role_id": _role_identifier(receipt["owner_role_id"], "pseudonymization owner_role_id"),
+        "approved": True,
+        "declared_rep_ids": declared_rep_ids,
+    }
+
+
 def validate_evidence(rows):
     required = {
         "evidence_id", "source_id", "source_version", "extracted_at", "as_of",
@@ -93,18 +169,21 @@ def validate_evidence(rows):
     for row in rows:
         _required_fields(row, required, "evidence row")
         assert_no_person_fields(row)
-        evidence_id = _identifier(row["evidence_id"], "evidence_id")
+        evidence_id = _stable_identifier(row["evidence_id"], "evidence_id")
         if evidence_id in seen:
             raise ValueError("evidence IDs must be unique")
-        clean = {field: _identifier(row[field], field) for field in sorted(required)}
+        clean = {
+            field: (_identifier(row[field], field) if field in {"purpose", "access_scope"} else _stable_identifier(row[field], field))
+            for field in sorted(required)
+        }
         seen.add(evidence_id)
         normalized.append(clean)
     return {"state": "VALID", "evidence_count": len(normalized), "evidence": sorted(normalized, key=lambda row: row["evidence_id"])}
 
 
 def reconcile_assignments(*, account_ids, rep_ids, assignment_rows, shared_model=None):
-    accounts = _identifier_list(account_ids, "account_ids")
-    reps = _identifier_list(rep_ids, "rep_ids")
+    accounts = [_stable_identifier(value, "account_ids") for value in _identifier_list(account_ids, "account_ids")]
+    reps = _rep_identifier_list(rep_ids, "rep_ids")
     if not isinstance(assignment_rows, list):
         raise ValueError("assignment_rows must be a list")
     shared_approved = False
@@ -112,11 +191,11 @@ def reconcile_assignments(*, account_ids, rep_ids, assignment_rows, shared_model
     shared_counting_method = None
     if shared_model is not None:
         _required_fields(shared_model, {"model_id", "approved", "role_policy_id", "counting_policy_id", "counting_method"}, "shared model")
-        shared_model_id = _identifier(shared_model["model_id"], "model_id")
+        shared_model_id = _stable_identifier(shared_model["model_id"], "model_id")
         shared_approved = _boolean(shared_model["approved"], "shared model approved")
-        _identifier(shared_model["role_policy_id"], "role_policy_id")
-        _identifier(shared_model["counting_policy_id"], "counting_policy_id")
-        shared_counting_method = _identifier(shared_model["counting_method"], "counting_method").upper()
+        _stable_identifier(shared_model["role_policy_id"], "role_policy_id")
+        _stable_identifier(shared_model["counting_policy_id"], "counting_policy_id")
+        shared_counting_method = _stable_identifier(shared_model["counting_method"], "counting_method").upper()
         if shared_approved and shared_counting_method != "EACH_ASSIGNED_REP":
             raise ValueError("unsupported approved shared counting method")
     known_accounts = set(accounts)
@@ -131,10 +210,10 @@ def reconcile_assignments(*, account_ids, rep_ids, assignment_rows, shared_model
     for row in assignment_rows:
         _required_fields(row, {"assignment_id", "account_id", "rep_ids", "evidence_ids"}, "assignment row")
         assert_no_person_fields(row)
-        assignment_id = _identifier(row["assignment_id"], "assignment_id")
-        account_id = _identifier(row["account_id"], "account_id")
-        assigned_reps = _identifier_list(row["rep_ids"], "assignment rep_ids")
-        evidence_ids = _identifier_list(row["evidence_ids"], "assignment evidence_ids")
+        assignment_id = _stable_identifier(row["assignment_id"], "assignment_id")
+        account_id = _stable_identifier(row["account_id"], "account_id")
+        assigned_reps = _rep_identifier_list(row["rep_ids"], "assignment rep_ids")
+        evidence_ids = [_stable_identifier(value, "assignment evidence_ids") for value in _identifier_list(row["evidence_ids"], "assignment evidence_ids")]
         if assignment_id in seen_assignment_ids:
             duplicate_assignment_ids.add(assignment_id)
         seen_assignment_ids.add(assignment_id)
@@ -206,16 +285,16 @@ def validate_constraints(*, reconciliation, constraint_rows):
     for row in constraint_rows:
         _required_fields(row, {"constraint_id", "type", "evidence_id", "policy_id", "owner"}, "constraint row")
         assert_no_person_fields(row)
-        constraint_id = _identifier(row["constraint_id"], "constraint_id")
+        constraint_id = _stable_identifier(row["constraint_id"], "constraint_id")
         if constraint_id in seen:
             raise ValueError("constraint IDs must be unique")
         seen.add(constraint_id)
-        kind = _identifier(row["type"], "constraint type").upper()
-        base = {key: _identifier(row[key], key) for key in ("constraint_id", "evidence_id", "policy_id", "owner")}
+        kind = _stable_identifier(row["type"], "constraint type").upper()
+        base = {key: _stable_identifier(row[key], key) for key in ("constraint_id", "evidence_id", "policy_id", "owner")}
         base["type"] = kind
         if kind in {"PINNED", "FORBIDDEN", "ALLOWED_PAIR", "RELATIONSHIP_REQUIRED"}:
-            account_id = _identifier(row.get("account_id"), "account_id")
-            rep_id = _identifier(row.get("rep_id"), "rep_id")
+            account_id = _stable_identifier(row.get("account_id"), "account_id")
+            rep_id = _rep_identifier(row.get("rep_id"), "rep_id")
             base.update(account_id=account_id, rep_id=rep_id)
             if account_id not in known_accounts or rep_id not in known_reps:
                 conflicts.append({"constraint_id": constraint_id, "reason": "constraint references an unknown account or rep"})
@@ -233,7 +312,7 @@ def validate_constraints(*, reconciliation, constraint_rows):
             if kind == "FORBIDDEN":
                 forbidden.add((account_id, rep_id))
         elif kind in {"MIN_COUNT", "MAX_COUNT"}:
-            rep_id = _identifier(row.get("rep_id"), "rep_id")
+            rep_id = _rep_identifier(row.get("rep_id"), "rep_id")
             value = _count(row.get("value"), "constraint value")
             base.update(rep_id=rep_id, value=value)
             if rep_id not in known_reps:
@@ -274,7 +353,10 @@ def summarize_counts(reconciliation):
     for row in reconciliation.get("assignments", []):
         for rep_id in row["rep_ids"]:
             counts[rep_id] += 1
-    return [{"rep_id": rep_id, "assigned_account_count": counts[rep_id]} for rep_id in sorted(counts)]
+    return [
+        {"rep_id": rep_id, "assigned_account_count": counts[rep_id]}
+        for rep_id in sorted(reconciliation.get("rep_ids", []))
+    ]
 
 
 def summarize_amounts(*, reconciliation, amount_rows):
@@ -288,17 +370,17 @@ def summarize_amounts(*, reconciliation, amount_rows):
     for row in amount_rows:
         _required_fields(row, {"account_id", "amount", "currency", "period", "basis", "evidence_id"}, "amount row")
         assert_no_person_fields(row)
-        account_id = _identifier(row["account_id"], "account_id")
+        account_id = _stable_identifier(row["account_id"], "account_id")
         if account_id in seen:
             raise ValueError("amount account IDs must be unique")
         seen.add(account_id)
         normalized = {
             "account_id": account_id,
             "amount": _decimal(row["amount"], "amount", allow_none=True),
-            "currency": _identifier(row["currency"], "currency").upper(),
-            "period": _identifier(row["period"], "period"),
-            "basis": _identifier(row["basis"], "basis"),
-            "evidence_id": _identifier(row["evidence_id"], "evidence_id"),
+            "currency": _stable_identifier(row["currency"], "currency").upper(),
+            "period": _stable_identifier(row["period"], "period"),
+            "basis": _stable_identifier(row["basis"], "basis"),
+            "evidence_id": _stable_identifier(row["evidence_id"], "evidence_id"),
         }
         by_account[account_id] = normalized
         bases.add((normalized["currency"], normalized["period"], normalized["basis"]))
@@ -315,6 +397,8 @@ def summarize_amounts(*, reconciliation, amount_rows):
         state = "VALID"
     totals = defaultdict(lambda: Decimal("0"))
     if len(bases) == 1:
+        for rep_id in reconciliation.get("rep_ids", []):
+            totals[rep_id] = Decimal("0")
         for account_id, rep_id in pairs:
             row = by_account.get(account_id)
             if row and row["amount"] is not None:
@@ -328,7 +412,10 @@ def summarize_amounts(*, reconciliation, amount_rows):
         "missing_account_ids": missing,
         "extra_account_ids": extra,
         "unknown_amount_account_ids": unknown,
-        "per_rep_totals": [{"rep_id": rep_id, "amount": totals[rep_id]} for rep_id in sorted(totals)] if basis else [],
+        "per_rep_totals": [
+            {"rep_id": rep_id, "amount": totals[rep_id] if basis else None}
+            for rep_id in sorted(reconciliation.get("rep_ids", []))
+        ],
     }
 
 
@@ -344,11 +431,11 @@ def summarize_routes(*, reconciliation, route_rows):
         required = {"route_id", "account_id", "rep_id", "duration_minutes", "distance", "distance_unit", "mode", "work_anchor_id", "departure_policy_id", "routing_policy_id", "source_id", "source_version", "status", "fallback", "visit_frequency", "evidence_id"}
         _required_fields(row, required, "route row")
         assert_no_person_fields(row)
-        route_id = _identifier(row["route_id"], "route_id")
+        route_id = _stable_identifier(row["route_id"], "route_id")
         if route_id in seen_routes:
             raise ValueError("route IDs must be unique")
         seen_routes.add(route_id)
-        pair = (_identifier(row["account_id"], "account_id"), _identifier(row["rep_id"], "rep_id"))
+        pair = (_stable_identifier(row["account_id"], "account_id"), _rep_identifier(row["rep_id"], "rep_id"))
         if pair in by_pair:
             raise ValueError("each assigned account/rep pair may have one route row")
         normalized = {
@@ -357,17 +444,17 @@ def summarize_routes(*, reconciliation, route_rows):
             "rep_id": pair[1],
             "duration_minutes": _decimal(row["duration_minutes"], "duration_minutes", allow_none=True),
             "distance": _decimal(row["distance"], "distance", allow_none=True),
-            "distance_unit": _identifier(row["distance_unit"], "distance_unit"),
-            "mode": _identifier(row["mode"], "mode"),
-            "work_anchor_id": _identifier(row["work_anchor_id"], "work_anchor_id"),
-            "departure_policy_id": _identifier(row["departure_policy_id"], "departure_policy_id"),
-            "routing_policy_id": _identifier(row["routing_policy_id"], "routing_policy_id"),
-            "source_id": _identifier(row["source_id"], "source_id"),
-            "source_version": _identifier(row["source_version"], "source_version"),
-            "status": _identifier(row["status"], "status").upper(),
-            "fallback": _identifier(row["fallback"], "fallback").upper(),
+            "distance_unit": _stable_identifier(row["distance_unit"], "distance_unit"),
+            "mode": _stable_identifier(row["mode"], "mode"),
+            "work_anchor_id": _stable_identifier(row["work_anchor_id"], "work_anchor_id"),
+            "departure_policy_id": _stable_identifier(row["departure_policy_id"], "departure_policy_id"),
+            "routing_policy_id": _stable_identifier(row["routing_policy_id"], "routing_policy_id"),
+            "source_id": _stable_identifier(row["source_id"], "source_id"),
+            "source_version": _stable_identifier(row["source_version"], "source_version"),
+            "status": _stable_identifier(row["status"], "status").upper(),
+            "fallback": _stable_identifier(row["fallback"], "fallback").upper(),
             "visit_frequency": _decimal(row["visit_frequency"], "visit_frequency"),
-            "evidence_id": _identifier(row["evidence_id"], "evidence_id"),
+            "evidence_id": _stable_identifier(row["evidence_id"], "evidence_id"),
         }
         if normalized["status"] != "OK" or normalized["fallback"] not in {"NONE", "APPROVED"} or normalized["duration_minutes"] is None or normalized["distance"] is None:
             invalid_status_pairs.add(pair)
@@ -378,6 +465,8 @@ def summarize_routes(*, reconciliation, route_rows):
     usable_pairs = pairs & set(by_pair) - invalid_status_pairs
     totals = defaultdict(lambda: {"duration_minutes": Decimal("0"), "distance": Decimal("0"), "route_count": 0})
     if len(policy_keys) == 1:
+        for rep_id in reconciliation.get("rep_ids", []):
+            totals[rep_id] = {"duration_minutes": Decimal("0"), "distance": Decimal("0"), "route_count": 0}
         for pair in usable_pairs:
             row = by_pair[pair]
             totals[pair[1]]["duration_minutes"] += row["duration_minutes"] * row["visit_frequency"]
@@ -400,7 +489,15 @@ def summarize_routes(*, reconciliation, route_rows):
         "extra_pairs": [{"account_id": account_id, "rep_id": rep_id} for account_id, rep_id in extra_pairs],
         "invalid_status_pairs": [{"account_id": account_id, "rep_id": rep_id} for account_id, rep_id in sorted(invalid_status_pairs)],
         "route_policy": None if len(policy_keys) != 1 else dict(zip(("mode", "departure_policy_id", "routing_policy_id", "distance_unit"), next(iter(policy_keys)))),
-        "per_rep_totals": [{"rep_id": rep_id, **totals[rep_id]} for rep_id in sorted(totals)] if len(policy_keys) == 1 else [],
+        "per_rep_totals": [
+            {
+                "rep_id": rep_id,
+                "duration_minutes": totals[rep_id]["duration_minutes"] if len(policy_keys) == 1 else None,
+                "distance": totals[rep_id]["distance"] if len(policy_keys) == 1 else None,
+                "route_count": sum(1 for pair in usable_pairs if pair[1] == rep_id),
+            }
+            for rep_id in sorted(reconciliation.get("rep_ids", []))
+        ],
     }
 
 
@@ -412,12 +509,12 @@ def validate_solver_receipt(receipt):
     assert_no_person_fields(receipt)
     clean = {field: receipt[field] for field in required}
     for field in ("formulation_id", "objective_normalization_id", "solver", "solver_version", "time_limit", "memory_limit", "determinism", "tie_policy_id"):
-        clean[field] = _identifier(clean[field], field)
+        clean[field] = _stable_identifier(clean[field], field)
     clean["seed"] = _count(clean["seed"], "seed")
     clean["constraint_violation_count"] = _count(clean["constraint_violation_count"], "constraint_violation_count")
     for field in ("primal_bound", "dual_bound", "gap", "tolerance"):
         clean[field] = _decimal(clean[field], field, allow_none=True)
-    clean["status"] = _identifier(clean["status"], "status").upper()
+    clean["status"] = _stable_identifier(clean["status"], "status").upper()
     if clean["status"] not in SOLVER_STATUSES:
         raise ValueError("unsupported solver status")
     claimed_optimal = clean["status"] == "OPTIMAL"
@@ -433,12 +530,13 @@ def validate_solver_receipt(receipt):
     return {"state": state, "claimed_optimal": claimed_optimal, **{field: clean[field] for field in sorted(clean)}}
 
 
-def scenario_review(*, scenario_id, account_ids, rep_ids, assignment_rows, evidence_rows, constraint_rows, amount_rows, route_rows, workforce_review_state, shared_model=None, solver_receipt=None):
-    scenario_id = _identifier(scenario_id, "scenario_id")
-    workforce_review_state = _identifier(workforce_review_state, "workforce_review_state").upper()
+def scenario_review(*, scenario_id, account_ids, rep_ids, assignment_rows, evidence_rows, constraint_rows, amount_rows, route_rows, workforce_review_state, rep_pseudonymization_receipt, shared_model=None, solver_receipt=None):
+    scenario_id = _stable_identifier(scenario_id, "scenario_id")
+    workforce_review_state = _stable_identifier(workforce_review_state, "workforce_review_state").upper()
     if workforce_review_state not in {"APPROVED", "REVIEW_REQUIRED", "IDENTITY_REVIEW", "POLICY_REQUIRED"}:
         raise ValueError("unsupported workforce review state")
     evidence = validate_evidence(evidence_rows)
+    pseudonymization = validate_rep_pseudonymization_receipt(rep_pseudonymization_receipt, rep_ids)
     assignments = reconcile_assignments(account_ids=account_ids, rep_ids=rep_ids, assignment_rows=assignment_rows, shared_model=shared_model)
     constraints = validate_constraints(reconciliation=assignments, constraint_rows=constraint_rows)
     amounts = summarize_amounts(reconciliation=assignments, amount_rows=amount_rows)
@@ -459,6 +557,7 @@ def scenario_review(*, scenario_id, account_ids, rep_ids, assignment_rows, evide
         "scenario_id": scenario_id,
         "state": overall,
         "evidence": evidence,
+        "rep_pseudonymization_receipt": pseudonymization,
         "assignments": assignments,
         "constraints": constraints,
         "counts": summarize_counts(assignments),
@@ -477,7 +576,13 @@ def compare_scenarios(*, scenario_reviews, current_assignment_rows, same_populat
     for name, value in flags.items():
         _boolean(value, name)
     population_signatures = {
-        (tuple(review["assignments"]["account_ids"]), tuple(review["assignments"]["rep_ids"]), review["assignments"]["shared_model_id"], review["assignments"]["shared_counting_method"])
+        (
+            tuple(review["assignments"]["account_ids"]),
+            tuple(review["assignments"]["rep_ids"]),
+            review["assignments"]["shared_model_id"],
+            review["assignments"]["shared_counting_method"],
+            json.dumps(review["rep_pseudonymization_receipt"], sort_keys=True),
+        )
         for review in scenario_reviews
     }
     policy_signatures = {
@@ -533,11 +638,17 @@ def compare_scenarios(*, scenario_reviews, current_assignment_rows, same_populat
 
 
 def build_downstream_receipt(*, receipt_id, cutoff, timezone, policy_ids, scenario_reviews, comparison, reviewer, approver, decision_rule_id=None, approval_state="APPROVAL_REQUIRED"):
-    for value, name in ((receipt_id, "receipt_id"), (cutoff, "cutoff"), (timezone, "timezone"), (reviewer, "reviewer"), (approver, "approver")):
-        _identifier(value, name)
+    _stable_identifier(receipt_id, "receipt_id")
+    cutoff = _utc_timestamp(cutoff, "cutoff")
+    timezone = _timezone(timezone, "timezone")
+    reviewer = _role_identifier(reviewer, "reviewer")
+    approver = _role_identifier(approver, "approver")
     if not isinstance(policy_ids, dict) or not policy_ids:
         raise ValueError("policy_ids must be a non-empty object")
-    clean_policies = {str(key): _identifier(value, "policy ID") for key, value in sorted(policy_ids.items())}
+    clean_policies = {
+        _stable_identifier(str(key), "policy lane ID"): _stable_identifier(value, "policy ID")
+        for key, value in sorted(policy_ids.items())
+    }
     approval_state = _identifier(approval_state, "approval_state").upper()
     if approval_state not in {"APPROVAL_REQUIRED", "REVIEW_REQUIRED", "APPROVED_FOR_DECISION_REVIEW"}:
         raise ValueError("unsupported approval state")
@@ -558,6 +669,7 @@ def build_downstream_receipt(*, receipt_id, cutoff, timezone, policy_ids, scenar
             "route_state": review["routes"]["state"],
             "solver_state": review["solver"]["state"],
             "workforce_review_state": review["workforce_review_state"],
+            "rep_pseudonymization_receipt": review["rep_pseudonymization_receipt"],
             "evidence_ids": [row["evidence_id"] for row in review["evidence"]["evidence"]],
             "counts": review["counts"],
             "constraint_violations": review["constraints"]["violations"],
@@ -571,18 +683,18 @@ def build_downstream_receipt(*, receipt_id, cutoff, timezone, policy_ids, scenar
             "solver_receipt": review["solver"],
         })
     receipt = {
-        "receipt_id": _identifier(receipt_id, "receipt_id"),
-        "cutoff": _identifier(cutoff, "cutoff"),
-        "timezone": _identifier(timezone, "timezone"),
+        "receipt_id": _stable_identifier(receipt_id, "receipt_id"),
+        "cutoff": cutoff,
+        "timezone": timezone,
         "policy_ids": clean_policies,
         "scenarios": scenario_rows,
         "comparison_state": comparison["state"],
         "ranked": False,
         "selected_scenario_id": None,
-        "decision_rule_id": _identifier(decision_rule_id, "decision_rule_id") if decision_rule_id else None,
+        "decision_rule_id": _stable_identifier(decision_rule_id, "decision_rule_id") if decision_rule_id else None,
         "approval_state": approval_state,
-        "reviewer": _identifier(reviewer, "reviewer"),
-        "approver": _identifier(approver, "approver"),
+        "reviewer": reviewer,
+        "approver": approver,
         "boundary": BOUNDARY,
     }
     assert_no_person_fields(receipt)

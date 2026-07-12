@@ -5,15 +5,15 @@ metadata:
   category: "Capacity & Planning"
   phase: "2"
   data_readiness: "approved_scope_population_constraint_amount_route_workforce_and_decision_policies_required"
-  version: "2.0"
+  version: "2.1"
   author: "RevOps Agent Factory"
-  last_updated: "2026-07-10"
+  last_updated: "2026-07-12"
   dependencies:
-    - "Customer-approved scope, population, identity, constraint, amount, route, workforce, privacy, accessibility, comparison, solver, and decision policies"
+    - "Customer-approved scope, population, opaque rep-pseudonymization, identity, constraint, amount, route, workforce, privacy, accessibility, comparison, solver, and decision policies"
   mcps:
     - "Approved CRM, territory, route, finance, and solver evidence in read-only mode"
   minimum_data:
-    - "Stable scenario/account/rep IDs, frozen populations, explicit candidate assignments, evidence provenance, and named human approval roles"
+    - "Stable scenario/account IDs, opaque rep IDs, a population-bound pseudonymization receipt, frozen populations, explicit candidate assignments, evidence provenance, and approved human role IDs"
 ---
 
 # Territory Scenario Evidence Review
@@ -39,9 +39,9 @@ Validate supplied candidate assignments without inventing an optimal, fair, bala
 
 1. Work read-only. Never change CRM owners, territory objects, teams, sharing, quotas, pay, staffing, account priority, schedules, alerts, messages, or routing.
 2. Validate explicit candidate assignments only. Do not create, optimize, repair, rank, score, or automatically select a scenario.
-3. Freeze scenario/account/rep/territory IDs, cutoff, window, timezone, source versions, policy versions, owners, reviewer, approver, and prohibited uses.
-4. Require the complete in-scope account and rep populations. Preserve excluded, unknown, missing, duplicate, unassigned, conflicting, overlay, and shared/team records.
-5. Use pseudonymous rep IDs and approved work anchors only. Exclude names, emails, home locations, protected traits, manager narratives, content, and historical quota, discipline, or performance signals by default.
+3. Freeze scenario/account/territory IDs, opaque rep IDs, the rep-population pseudonymization receipt, cutoff, window, timezone, source versions, policy versions, owner-role IDs, reviewer-role ID, approver-role ID, and prohibited uses.
+4. Require the complete in-scope account and rep populations. Preserve excluded, unknown, missing, duplicate, unassigned, conflicting, overlay, and shared/team records. Every declared in-scope rep must appear in every per-rep summary, including a zero-assignment row.
+5. Accept rep IDs only as `rep-` plus 32 lowercase hexadecimal characters and require a separate approved receipt bound to the exact declared rep set. Reject readable prefixes, names, emails, free text, home locations, protected traits, manager narratives, content, and historical quota, discipline, or performance signals.
 6. Reconcile every in-scope account exactly once. Permit multiple assigned reps only when a named, approved shared/team-ownership model defines roles and counting treatment.
 7. Apply only customer-owned hard constraints with IDs, versions, evidence, effective times, owners, and conflict handling. Never invent universal minimums, maximums, weights, thresholds, tiers, or fairness rules.
 8. Keep amount bases separate. Require exact non-negative values, currency, period, basis, source, and record coverage. Never impute missing amounts or sum unlike bases, periods, or currencies.
@@ -49,47 +49,35 @@ Validate supplied candidate assignments without inventing an optimal, fair, bala
 10. Never convert straight-line distance into drive time, invent visit frequency, treat a ZIP centroid as a person location, or call separate anchor-to-account trips a weekly route.
 11. Treat solver output as external evidence. Preserve formulation/objective normalization, solver/version, seed, status, bounds, gap, tolerances, limits, determinism, constraint, and tie receipts.
 12. Never relabel `FEASIBLE`, `LIMIT`, `UNDETERMINED`, an incomplete model, or a violated-constraint candidate as `OPTIMAL`.
-13. Compare compatible scenarios descriptively: coverage, moved-account count, per-rep counts, same-basis amounts, constraint results, missingness, route coverage/totals, solver state, and workforce review state.
+13. Compare compatible scenarios descriptively: coverage, moved-account count, complete-population per-rep counts, same-basis amounts, constraint results, missingness, route coverage/totals, solver state, and workforce review state. Preserve every rep row even when a total is unresolved.
 14. Do not rank scenarios. Different populations, policies, amount bases, currencies, route policies, incomplete coverage, or incompatible constraints return `INCOMPARABLE`.
 15. Do not create potential, balance, fairness, confidence, capacity, risk, attrition, quota, productivity, value, or outcome scores. Equal counts or amounts do not prove fairness.
 16. Keep unresolved identity, leave, ramp, accommodation, labor-rule, accessibility, overlay, team-ownership, and relationship questions in the review queue; never convert them to neutral values.
 17. Treat any preferred scenario as a human decision question. Require a preapproved decision rule, complete evidence, correction/appeal path, affected-party review, and named approver.
-18. Export only the exact helper-built evidence handoff. Never hand-add a best scenario, recommendation, score, workforce label, quota, causal claim, or implementation action.
-19. Pass the `build_downstream_receipt` result to `render_receipt_json` and paste that exact JSON output verbatim inside the downstream-receipt code fence. Do not summarize, restyle, abbreviate, rename, reorder, or omit any field or nested key.
+18. Build only the bounded evidence response with `build_downstream_receipt`. Never hand-add a best scenario, recommendation, score, workforce label, quota, causal claim, or implementation action.
+19. Return `render_receipt_json(build_downstream_receipt(...))` verbatim as the entire response. Start with `{`; add no Markdown fence, heading, introduction, summary, table, narration, repeated number, correction, or closing prose.
 20. Freeze every receipt. New evidence creates a new version and never silently rewrites the earlier review.
 
 ## Preflight
 
-Record the approved purpose, scope/policy IDs, frozen population hashes, candidate scenario IDs, assignment and current-state evidence, constraint register, amount and route bases, workforce/privacy/accessibility review, solver provenance, comparison policy, decision rule, owners, reviewer, approver, correction path, retention, and prohibited uses.
+Record the approved purpose, scope/policy IDs, frozen population hashes, exact opaque rep IDs, population-bound pseudonymization receipt, candidate scenario IDs, assignment and current-state evidence, constraint register, amount and route bases, workforce/privacy/accessibility review, solver provenance, comparison policy, decision rule, owner-role IDs, reviewer-role ID, approver-role ID, correction-path ID, retention policy, and prohibited uses.
 
 Return `POLICY_REQUIRED`, `SOURCE_REQUIRED`, `IDENTITY_REVIEW`, `INCOMPLETE_POPULATION`, `CONSTRAINT_VIOLATION`, `INCOMPARABLE`, `SOLVER_LIMIT`, or `APPROVAL_REQUIRED` for the affected lane. Do not fill a gap with a score, estimate, inference, or fallback.
 
 ## Workflow
 
 1. **Freeze scope.** Assign stable receipt, policy, evidence, population, and scenario IDs with cutoff and timezone.
-2. **Reconcile populations.** Validate pseudonymous identities, current state, exclusions, overlays, and shared/team ownership.
+2. **Reconcile populations.** Validate the exact opaque rep format, the approved population-bound pseudonymization receipt, current state, exclusions, overlays, and shared/team ownership.
 3. **Validate assignments.** Prove exact account coverage and reject unknown, duplicate, missing, or unsupported assignments.
 4. **Check constraints.** Evaluate only the approved allowed, forbidden, pinned, count-bound, relationship, and shared/team rules.
-5. **Build evidence summaries.** Use the helper for per-rep counts, same-basis amounts, supplied-route coverage/totals, and solver receipts.
+5. **Build evidence summaries.** Use the helper for complete-population per-rep counts, same-basis amounts, supplied-route coverage/totals, and solver receipts. Keep zero-assignment and unresolved rows explicit.
 6. **Compare without ranking.** Preserve moved accounts, missingness, incompatibilities, violations, and workforce review state.
 7. **Prepare human review.** Present decision questions and approval gaps; do not select or implement a scenario.
-8. **Export bounded evidence.** Produce the exact helper handoff and frozen boundary.
+8. **Export bounded evidence.** Return the exact helper-rendered JSON response and nothing else.
 
 ## Output Contract
 
-Return eleven artifacts:
-
-1. scope/policy/no-write receipt;
-2. source and evidence register;
-3. frozen account/rep population reconciliation;
-4. candidate assignment completeness table;
-5. hard-constraint register and violation queue;
-6. per-rep descriptive count and same-basis amount table;
-7. route evidence coverage and supplied-route totals;
-8. external solver/model receipt;
-9. non-ranked scenario comparison table;
-10. privacy/workforce/accessibility/correction/approval queue;
-11. exact bounded downstream receipt with every helper-returned field rendered, ending `NO TERRITORY OR OWNERSHIP CHANGE / NO QUOTA OR WORKFORCE ACTION`.
+Return exactly one artifact: the raw JSON string produced by `render_receipt_json(build_downstream_receipt(...))`. It contains the policy, population-bound rep-pseudonymization, evidence, complete-population count/amount/route, constraint, solver, comparison, approval, and no-action receipts. Every output number is helper-owned and appears only in that rendering. Do not wrap, restyle, summarize, duplicate, or correct it in model prose.
 
 ## Failure Boundary
 

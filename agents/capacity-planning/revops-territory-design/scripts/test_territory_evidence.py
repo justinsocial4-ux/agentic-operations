@@ -16,24 +16,30 @@ from territory_evidence import (
     summarize_routes,
     validate_constraints,
     validate_evidence,
+    validate_rep_pseudonymization_receipt,
     validate_solver_receipt,
 )
 
 
 class TerritoryEvidenceTests(unittest.TestCase):
+    REP_ONE = "rep-00000000000000000000000000000001"
+    REP_TWO = "rep-00000000000000000000000000000002"
+    REP_THREE = "rep-00000000000000000000000000000003"
+    REP_UNKNOWN = "rep-ffffffffffffffffffffffffffffffff"
+
     def evidence(self):
         return [{"evidence_id": "E-1", "source_id": "crm-export", "source_version": "v7", "extracted_at": "2026-07-10T12:00:00Z", "as_of": "2026-07-10T11:59:59Z", "policy_id": "SRC-2", "purpose": "territory scenario review", "access_scope": "aggregate-and-pseudonymous"}]
 
     def assignments(self, moved=False):
         return [
-            {"assignment_id": "AS-1", "account_id": "A-1", "rep_ids": ["R-2" if moved else "R-1"], "evidence_ids": ["E-1"]},
-            {"assignment_id": "AS-2", "account_id": "A-2", "rep_ids": ["R-2"], "evidence_ids": ["E-1"]},
+            {"assignment_id": "AS-1", "account_id": "A-1", "rep_ids": [self.REP_TWO if moved else self.REP_ONE], "evidence_ids": ["E-1"]},
+            {"assignment_id": "AS-2", "account_id": "A-2", "rep_ids": [self.REP_TWO], "evidence_ids": ["E-1"]},
         ]
 
     def constraints(self):
         return [
-            {"constraint_id": "C-1", "type": "PINNED", "account_id": "A-1", "rep_id": "R-1", "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
-            {"constraint_id": "C-2", "type": "MAX_COUNT", "rep_id": "R-2", "value": 2, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
+            {"constraint_id": "C-1", "type": "PINNED", "account_id": "A-1", "rep_id": self.REP_ONE, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
+            {"constraint_id": "C-2", "type": "MAX_COUNT", "rep_id": self.REP_TWO, "value": 2, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
         ]
 
     def amounts(self):
@@ -44,9 +50,21 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def routes(self, moved=False):
         return [
-            {"route_id": "RT-1", "account_id": "A-1", "rep_id": "R-2" if moved else "R-1", "duration_minutes": "30", "distance": "15.5", "distance_unit": "km", "mode": "DRIVE", "work_anchor_id": "WA-1", "departure_policy_id": "DEP-1", "routing_policy_id": "ROUTE-1", "source_id": "routes-api", "source_version": "2026-07", "status": "OK", "fallback": "NONE", "visit_frequency": "2", "evidence_id": "E-1"},
-            {"route_id": "RT-2", "account_id": "A-2", "rep_id": "R-2", "duration_minutes": "20", "distance": "10", "distance_unit": "km", "mode": "DRIVE", "work_anchor_id": "WA-2", "departure_policy_id": "DEP-1", "routing_policy_id": "ROUTE-1", "source_id": "routes-api", "source_version": "2026-07", "status": "OK", "fallback": "NONE", "visit_frequency": "1", "evidence_id": "E-1"},
+            {"route_id": "RT-1", "account_id": "A-1", "rep_id": self.REP_TWO if moved else self.REP_ONE, "duration_minutes": "30", "distance": "15.5", "distance_unit": "km", "mode": "DRIVE", "work_anchor_id": "WA-1", "departure_policy_id": "DEP-1", "routing_policy_id": "ROUTE-1", "source_id": "routes-api", "source_version": "2026-07", "status": "OK", "fallback": "NONE", "visit_frequency": "2", "evidence_id": "E-1"},
+            {"route_id": "RT-2", "account_id": "A-2", "rep_id": self.REP_TWO, "duration_minutes": "20", "distance": "10", "distance_unit": "km", "mode": "DRIVE", "work_anchor_id": "WA-2", "departure_policy_id": "DEP-1", "routing_policy_id": "ROUTE-1", "source_id": "routes-api", "source_version": "2026-07", "status": "OK", "fallback": "NONE", "visit_frequency": "1", "evidence_id": "E-1"},
         ]
+
+    def pseudonymization(self, rep_ids=None, approved=True):
+        return {
+            "receipt_id": "receipt-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "population_id": "population-territory-reps",
+            "method_id": "method-hmac-sha256-truncated-128",
+            "namespace_id": "namespace-territory-reps-v1",
+            "policy_id": "policy-rep-pseudonymization-v1",
+            "owner_role_id": "role-privacy-owner",
+            "approved": approved,
+            "declared_rep_ids": list(rep_ids or [self.REP_ONE, self.REP_TWO]),
+        }
 
     def solver(self, status="OPTIMAL"):
         return {"formulation_id": "FORM-1", "objective_normalization_id": "OBJ-1", "solver": "external-solver", "solver_version": "1.2.3", "seed": 7, "status": status, "primal_bound": "10", "dual_bound": "10", "gap": "0", "tolerance": "0.0001", "time_limit": "60s", "memory_limit": "1GB", "determinism": "single-threaded", "constraint_violation_count": 0, "tie_policy_id": "TIE-1"}
@@ -55,7 +73,7 @@ class TerritoryEvidenceTests(unittest.TestCase):
         constraints = self.constraints()
         if moved:
             constraints = constraints[1:]
-        return scenario_review(scenario_id=scenario_id, account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=self.assignments(moved), evidence_rows=self.evidence(), constraint_rows=constraints, amount_rows=self.amounts(), route_rows=self.routes(moved), workforce_review_state=workforce, solver_receipt=self.solver())
+        return scenario_review(scenario_id=scenario_id, account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(moved), evidence_rows=self.evidence(), constraint_rows=constraints, amount_rows=self.amounts(), route_rows=self.routes(moved), workforce_review_state=workforce, rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
 
     def test_evidence_valid_and_sorted(self):
         rows = self.evidence() + [dict(self.evidence()[0], evidence_id="E-0", source_version="v6")]
@@ -76,51 +94,105 @@ class TerritoryEvidenceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "prohibited person field"): assert_no_person_fields({"rep_email": "x@example.test"})
 
     def test_complete_assignment_is_valid(self):
-        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=self.assignments())
+        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments())
         self.assertEqual(result["state"], "VALID")
 
+    def test_direct_rep_identity_rejected(self):
+        rows = self.assignments()
+        rows[0]["rep_ids"] = ["Alice Smith"]
+        with self.assertRaises(ValueError):
+            reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["Alice Smith", self.REP_TWO], assignment_rows=rows)
+
+    def test_structurally_different_direct_rep_identity_rejected(self):
+        rows = self.assignments()
+        rows[0]["rep_ids"] = ["Jordan Lee"]
+        with self.assertRaises(ValueError):
+            reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["Jordan Lee", self.REP_TWO], assignment_rows=rows)
+
+    def test_readable_prefixed_rep_identity_rejected(self):
+        rows = self.assignments()
+        rows[0]["rep_ids"] = ["rep-alice-smith"]
+        with self.assertRaises(ValueError):
+            reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["rep-alice-smith", self.REP_TWO], assignment_rows=rows)
+
+    def test_email_bearing_rep_identity_rejected(self):
+        rows = self.assignments()
+        rows[0]["rep_ids"] = ["rep-jordan.lee@example.test"]
+        with self.assertRaises(ValueError):
+            reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["rep-jordan.lee@example.test", self.REP_TWO], assignment_rows=rows)
+
+    def test_malformed_opaque_rep_ids_rejected(self):
+        malformed = [
+            "rep-0123",
+            "rep-AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "rep-0000000000000000000000000000000g",
+            "rep-00000000000000000000000000000001-extra",
+        ]
+        for value in malformed:
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                reconcile_assignments(account_ids=["A-1"], rep_ids=[value], assignment_rows=[])
+
+    def test_valid_pseudonymization_receipt_is_population_bound(self):
+        result = validate_rep_pseudonymization_receipt(self.pseudonymization(), [self.REP_ONE, self.REP_TWO])
+        self.assertEqual(result["declared_rep_ids"], [self.REP_ONE, self.REP_TWO])
+
+    def test_pseudonymization_receipt_population_mismatch_rejected(self):
+        receipt = self.pseudonymization([self.REP_ONE])
+        with self.assertRaises(ValueError):
+            validate_rep_pseudonymization_receipt(receipt, [self.REP_ONE, self.REP_TWO])
+
+    def test_unapproved_pseudonymization_receipt_rejected(self):
+        with self.assertRaises(ValueError):
+            validate_rep_pseudonymization_receipt(self.pseudonymization(approved=False), [self.REP_ONE, self.REP_TWO])
+
+    def test_pseudonymization_receipt_rejects_extra_free_text(self):
+        receipt = self.pseudonymization()
+        receipt["notes"] = "contact alice@example.test"
+        with self.assertRaises(ValueError):
+            validate_rep_pseudonymization_receipt(receipt, [self.REP_ONE, self.REP_TWO])
+
     def test_missing_account_is_visible(self):
-        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=self.assignments()[:1])
+        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments()[:1])
         self.assertEqual((result["state"], result["missing_account_ids"]), ("INCOMPLETE_POPULATION", ["A-2"]))
 
     def test_duplicate_account_is_visible(self):
         rows = self.assignments() + [dict(self.assignments()[0], assignment_id="AS-3")]
-        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=rows)
+        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=rows)
         self.assertEqual(result["duplicate_account_ids"], ["A-1"])
 
     def test_unknown_rep_is_visible(self):
-        rows = self.assignments(); rows[0]["rep_ids"] = ["R-X"]
-        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=rows)
-        self.assertEqual(result["unknown_rep_ids"], ["R-X"])
+        rows = self.assignments(); rows[0]["rep_ids"] = [self.REP_UNKNOWN]
+        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=rows)
+        self.assertEqual(result["unknown_rep_ids"], [self.REP_UNKNOWN])
 
     def test_shared_assignment_requires_approved_model(self):
-        rows = self.assignments(); rows[0]["rep_ids"] = ["R-1", "R-2"]
-        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=rows)
+        rows = self.assignments(); rows[0]["rep_ids"] = [self.REP_ONE, self.REP_TWO]
+        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=rows)
         self.assertEqual(result["unsupported_shared_account_ids"], ["A-1"])
 
     def test_approved_shared_model_is_preserved(self):
-        rows = self.assignments(); rows[0]["rep_ids"] = ["R-1", "R-2"]
+        rows = self.assignments(); rows[0]["rep_ids"] = [self.REP_ONE, self.REP_TWO]
         model = {"model_id": "TEAM-1", "approved": True, "role_policy_id": "ROLE-1", "counting_policy_id": "COUNT-1", "counting_method": "EACH_ASSIGNED_REP"}
-        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=rows, shared_model=model)
+        result = reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=rows, shared_model=model)
         self.assertEqual((result["state"], result["shared_model_id"]), ("VALID", "TEAM-1"))
 
     def test_unsupported_shared_counting_method_fails(self):
-        rows = self.assignments(); rows[0]["rep_ids"] = ["R-1", "R-2"]
+        rows = self.assignments(); rows[0]["rep_ids"] = [self.REP_ONE, self.REP_TWO]
         model = {"model_id": "TEAM-1", "approved": True, "role_policy_id": "ROLE-1", "counting_policy_id": "COUNT-1", "counting_method": "FRACTIONAL"}
-        with self.assertRaises(ValueError): reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=rows, shared_model=model)
+        with self.assertRaises(ValueError): reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=rows, shared_model=model)
 
     def reconciliation(self):
-        return reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=self.assignments())
+        return reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments())
 
     def test_constraints_valid(self):
         self.assertEqual(validate_constraints(reconciliation=self.reconciliation(), constraint_rows=self.constraints())["state"], "VALID")
 
     def test_pinned_violation_is_visible(self):
-        result = validate_constraints(reconciliation=reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=self.assignments(True)), constraint_rows=self.constraints())
+        result = validate_constraints(reconciliation=reconcile_assignments(account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(True)), constraint_rows=self.constraints())
         self.assertEqual(result["state"], "CONSTRAINT_VIOLATION")
 
     def test_conflicting_pinned_and_forbidden_is_visible(self):
-        rows = self.constraints() + [{"constraint_id": "C-3", "type": "FORBIDDEN", "account_id": "A-1", "rep_id": "R-1", "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"}]
+        rows = self.constraints() + [{"constraint_id": "C-3", "type": "FORBIDDEN", "account_id": "A-1", "rep_id": self.REP_ONE, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"}]
         result = validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)
         self.assertTrue(result["conflicts"])
 
@@ -129,18 +201,23 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def test_multiple_allowed_pairs_are_a_set(self):
         rows = [
-            {"constraint_id": "C-A1", "type": "ALLOWED_PAIR", "account_id": "A-1", "rep_id": "R-1", "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
-            {"constraint_id": "C-A2", "type": "ALLOWED_PAIR", "account_id": "A-1", "rep_id": "R-2", "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
+            {"constraint_id": "C-A1", "type": "ALLOWED_PAIR", "account_id": "A-1", "rep_id": self.REP_ONE, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
+            {"constraint_id": "C-A2", "type": "ALLOWED_PAIR", "account_id": "A-1", "rep_id": self.REP_TWO, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"},
         ]
         self.assertEqual(validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)["state"], "VALID")
 
     def test_unknown_constraint_target_is_conflict(self):
-        rows = [{"constraint_id": "C-X", "type": "PINNED", "account_id": "A-X", "rep_id": "R-1", "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"}]
+        rows = [{"constraint_id": "C-X", "type": "PINNED", "account_id": "A-X", "rep_id": self.REP_ONE, "evidence_id": "E-1", "policy_id": "CON-1", "owner": "territory-policy-owner"}]
         self.assertEqual(validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)["state"], "CONSTRAINT_VIOLATION")
+
+    def test_constraint_rep_identity_cannot_bypass_population_contract(self):
+        rows = [{"constraint_id": "C-X", "type": "PINNED", "account_id": "A-1", "rep_id": "rep-alice-smith", "evidence_id": "E-1", "policy_id": "CON-1", "owner": "role-territory-owner"}]
+        with self.assertRaises(ValueError):
+            validate_constraints(reconciliation=self.reconciliation(), constraint_rows=rows)
 
     def test_amounts_exact(self):
         result = summarize_amounts(reconciliation=self.reconciliation(), amount_rows=self.amounts())
-        self.assertEqual((result["state"], result["per_rep_totals"]), ("VALID", [{"rep_id": "R-1", "amount": Decimal("100.25")}, {"rep_id": "R-2", "amount": Decimal("99.75")}]))
+        self.assertEqual((result["state"], result["per_rep_totals"]), ("VALID", [{"rep_id": self.REP_ONE, "amount": Decimal("100.25")}, {"rep_id": self.REP_TWO, "amount": Decimal("99.75")}]))
 
     def test_missing_amount_is_source_required(self):
         result = summarize_amounts(reconciliation=self.reconciliation(), amount_rows=self.amounts()[:1])
@@ -153,7 +230,12 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def test_mixed_currency_is_incomparable(self):
         rows = self.amounts(); rows[1]["currency"] = "EUR"
-        self.assertEqual(summarize_amounts(reconciliation=self.reconciliation(), amount_rows=rows)["state"], "INCOMPARABLE")
+        result = summarize_amounts(reconciliation=self.reconciliation(), amount_rows=rows)
+        self.assertEqual(result["state"], "INCOMPARABLE")
+        self.assertEqual(result["per_rep_totals"], [
+            {"rep_id": self.REP_ONE, "amount": None},
+            {"rep_id": self.REP_TWO, "amount": None},
+        ])
 
     def test_float_amount_fails(self):
         rows = self.amounts(); rows[0]["amount"] = 1.2
@@ -172,9 +254,33 @@ class TerritoryEvidenceTests(unittest.TestCase):
         result = summarize_routes(reconciliation=self.reconciliation(), route_rows=self.routes())
         self.assertEqual(result["per_rep_totals"][0]["duration_minutes"], Decimal("60"))
 
+    def test_zero_assignment_rep_is_present_in_all_summaries(self):
+        reconciliation = reconcile_assignments(
+            account_ids=["A-1", "A-2"],
+            rep_ids=[self.REP_ONE, self.REP_TWO, self.REP_THREE],
+            assignment_rows=self.assignments(),
+        )
+        review = scenario_review(
+            scenario_id="S-ZERO",
+            account_ids=["A-1", "A-2"],
+            rep_ids=[self.REP_ONE, self.REP_TWO, self.REP_THREE],
+            assignment_rows=self.assignments(),
+            evidence_rows=self.evidence(),
+            constraint_rows=self.constraints(),
+            amount_rows=self.amounts(),
+            route_rows=self.routes(),
+            workforce_review_state="APPROVED",
+            rep_pseudonymization_receipt=self.pseudonymization([self.REP_ONE, self.REP_TWO, self.REP_THREE]),
+            solver_receipt=self.solver(),
+        )
+        self.assertEqual(reconciliation["rep_ids"], [self.REP_ONE, self.REP_TWO, self.REP_THREE])
+        self.assertEqual(review["counts"][-1], {"rep_id": self.REP_THREE, "assigned_account_count": 0})
+        self.assertEqual(review["amounts"]["per_rep_totals"][-1], {"rep_id": self.REP_THREE, "amount": Decimal("0")})
+        self.assertEqual(review["routes"]["per_rep_totals"][-1], {"rep_id": self.REP_THREE, "duration_minutes": Decimal("0"), "distance": Decimal("0"), "route_count": 0})
+
     def test_missing_route_is_source_required(self):
         result = summarize_routes(reconciliation=self.reconciliation(), route_rows=self.routes()[:1])
-        self.assertEqual((result["state"], result["missing_pairs"]), ("SOURCE_REQUIRED", [{"account_id": "A-2", "rep_id": "R-2"}]))
+        self.assertEqual((result["state"], result["missing_pairs"]), ("SOURCE_REQUIRED", [{"account_id": "A-2", "rep_id": self.REP_TWO}]))
 
     def test_route_error_is_not_counted(self):
         rows = self.routes(); rows[0]["status"] = "ELEMENT_ERROR"; rows[0]["duration_minutes"] = None
@@ -188,7 +294,24 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def test_mixed_route_policy_is_incomparable(self):
         rows = self.routes(); rows[1]["mode"] = "TRANSIT"
-        self.assertEqual(summarize_routes(reconciliation=self.reconciliation(), route_rows=rows)["state"], "INCOMPARABLE")
+        result = summarize_routes(reconciliation=self.reconciliation(), route_rows=rows)
+        self.assertEqual(result["state"], "INCOMPARABLE")
+        self.assertEqual(result["per_rep_totals"], [
+            {"rep_id": self.REP_ONE, "duration_minutes": None, "distance": None, "route_count": 1},
+            {"rep_id": self.REP_TWO, "duration_minutes": None, "distance": None, "route_count": 1},
+        ])
+
+    def test_route_rep_identity_cannot_leak_through_extra_pair(self):
+        rows = self.routes()
+        rows[0]["rep_id"] = "Jordan Lee"
+        with self.assertRaises(ValueError):
+            summarize_routes(reconciliation=self.reconciliation(), route_rows=rows)
+
+    def test_solver_free_text_cannot_enter_receipt(self):
+        receipt = self.solver()
+        receipt["solver"] = "contact alice@example.test"
+        with self.assertRaises(ValueError):
+            validate_solver_receipt(receipt)
 
     def test_solver_optimal_receipt(self):
         self.assertEqual(validate_solver_receipt(self.solver())["state"], "OPTIMAL")
@@ -210,7 +333,7 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def test_infeasible_solver_blocks_scenario(self):
         solver = self.solver("INFEASIBLE")
-        result = scenario_review(scenario_id="S-I", account_ids=["A-1", "A-2"], rep_ids=["R-1", "R-2"], assignment_rows=self.assignments(), evidence_rows=self.evidence(), constraint_rows=self.constraints(), amount_rows=self.amounts(), route_rows=self.routes(), workforce_review_state="APPROVED", solver_receipt=solver)
+        result = scenario_review(scenario_id="S-I", account_ids=["A-1", "A-2"], rep_ids=[self.REP_ONE, self.REP_TWO], assignment_rows=self.assignments(), evidence_rows=self.evidence(), constraint_rows=self.constraints(), amount_rows=self.amounts(), route_rows=self.routes(), workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=solver)
         self.assertEqual(result["state"], "INCOMPARABLE")
 
     def test_scenario_valid(self):
@@ -222,7 +345,7 @@ class TerritoryEvidenceTests(unittest.TestCase):
 
     def test_scenario_order_is_deterministic_without_mutation(self):
         assignments = self.assignments(); original = deepcopy(assignments)
-        result_a = scenario_review(scenario_id="S-1", account_ids=["A-2", "A-1"], rep_ids=["R-2", "R-1"], assignment_rows=assignments, evidence_rows=self.evidence(), constraint_rows=list(reversed(self.constraints())), amount_rows=list(reversed(self.amounts())), route_rows=list(reversed(self.routes())), workforce_review_state="APPROVED", solver_receipt=self.solver())
+        result_a = scenario_review(scenario_id="S-1", account_ids=["A-2", "A-1"], rep_ids=[self.REP_TWO, self.REP_ONE], assignment_rows=assignments, evidence_rows=self.evidence(), constraint_rows=list(reversed(self.constraints())), amount_rows=list(reversed(self.amounts())), route_rows=list(reversed(self.routes())), workforce_review_state="APPROVED", rep_pseudonymization_receipt=self.pseudonymization(), solver_receipt=self.solver())
         result_b = self.review()
         self.assertEqual(result_a, result_b)
         self.assertEqual(assignments, original)
@@ -255,32 +378,51 @@ class TerritoryEvidenceTests(unittest.TestCase):
     def test_receipt_is_bounded(self):
         reviews = [self.review("S-1"), self.review("S-2", True)]
         comparison = self.comparison()
-        result = build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1", "decision": "DEC-1"}, scenario_reviews=reviews, comparison=comparison, reviewer="territory-reviewer-role", approver="named-approver-role")
+        result = build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1", "decision": "DEC-1"}, scenario_reviews=reviews, comparison=comparison, reviewer="role-territory-reviewer", approver="role-territory-approver")
         self.assertEqual(result["boundary"], BOUNDARY)
         self.assertFalse({"recommendation", "best_scenario", "confidence", "quota", "fairness_score"}.intersection(result))
 
     def test_receipt_rejects_selected_comparison(self):
         comparison = self.comparison(); comparison["selected_scenario_id"] = "S-1"
-        with self.assertRaises(ValueError): build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2")], comparison=comparison, reviewer="reviewer-role", approver="approver-role")
+        with self.assertRaises(ValueError): build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2")], comparison=comparison, reviewer="role-reviewer", approver="role-approver")
 
     def test_decision_review_requires_rule(self):
-        with self.assertRaises(ValueError): build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2")], comparison=self.comparison(), reviewer="reviewer-role", approver="approver-role", approval_state="APPROVED_FOR_DECISION_REVIEW")
+        with self.assertRaises(ValueError): build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2")], comparison=self.comparison(), reviewer="role-reviewer", approver="role-approver", approval_state="APPROVED_FOR_DECISION_REVIEW")
 
     def test_decision_review_rejects_incomparable_evidence(self):
         reviews = [self.review("S-1"), self.review("S-2", workforce="REVIEW_REQUIRED")]
         comparison = compare_scenarios(scenario_reviews=reviews, current_assignment_rows=self.assignments(), same_population=True, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
-        with self.assertRaises(ValueError): build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=reviews, comparison=comparison, reviewer="reviewer-role", approver="approver-role", decision_rule_id="DEC-1", approval_state="APPROVED_FOR_DECISION_REVIEW")
+        with self.assertRaises(ValueError): build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=reviews, comparison=comparison, reviewer="role-reviewer", approver="role-approver", decision_rule_id="DEC-1", approval_state="APPROVED_FOR_DECISION_REVIEW")
 
     def test_exact_json_renderer_preserves_nested_field_names(self):
         reviews = [self.review("S-1"), self.review("S-2", True)]
-        receipt = build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=reviews, comparison=self.comparison(), reviewer="reviewer-role", approver="approver-role")
+        receipt = build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=reviews, comparison=self.comparison(), reviewer="role-reviewer", approver="role-approver")
         rendered = json.loads(render_receipt_json(receipt))
-        self.assertEqual(rendered["scenarios"][0]["counts"][0], {"rep_id": "R-1", "assigned_account_count": 1})
-        self.assertEqual(rendered["scenarios"][0]["amount_totals"][0], {"rep_id": "R-1", "amount": "100.25"})
+        self.assertEqual(rendered["scenarios"][0]["counts"][0], {"rep_id": self.REP_ONE, "assigned_account_count": 1})
+        self.assertEqual(rendered["scenarios"][0]["amount_totals"][0], {"rep_id": self.REP_ONE, "amount": "100.25"})
+        self.assertEqual(rendered["scenarios"][0]["rep_pseudonymization_receipt"]["declared_rep_ids"], [self.REP_ONE, self.REP_TWO])
         self.assertIn("solver_receipt", rendered["scenarios"][1])
 
     def test_exact_json_renderer_rejects_non_object(self):
         with self.assertRaises(ValueError): render_receipt_json([])
+
+    def test_exact_json_renderer_is_the_full_unfenced_response(self):
+        reviews = [self.review("S-1"), self.review("S-2", True)]
+        receipt = build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=reviews, comparison=self.comparison(), reviewer="role-reviewer", approver="role-approver")
+        rendered = render_receipt_json(receipt)
+        self.assertTrue(rendered.startswith("{"))
+        self.assertTrue(rendered.endswith("}"))
+        self.assertFalse(rendered.endswith("\n"))
+        self.assertNotIn("```", rendered)
+        self.assertNotIn("Satisfied", rendered)
+
+    def test_receipt_rejects_email_bearing_reviewer_role(self):
+        with self.assertRaises(ValueError):
+            build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2")], comparison=self.comparison(), reviewer="role-alice@example.test", approver="role-approver")
+
+    def test_receipt_rejects_free_text_policy_id(self):
+        with self.assertRaises(ValueError):
+            build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "contact alice@example.test"}, scenario_reviews=[self.review("S-1"), self.review("S-2")], comparison=self.comparison(), reviewer="role-reviewer", approver="role-approver")
 
 
 if __name__ == "__main__":
