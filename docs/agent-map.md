@@ -38,6 +38,7 @@ reports, bad forecasts, and wasted sales motion.
 | [Contact Decay Detection](../agents/data-quality-crm-hygiene/revops-data-contact-decay/SKILL.md) | Finds stale contacts that may hurt engagement and sender reputation. |
 | [CRM Health Score Agent](../agents/data-quality-crm-hygiene/revops-data-crm-health-score/SKILL.md) | Scores CRM data quality across key dimensions. |
 | [Enrichment Orchestration Engine](../agents/data-quality-crm-hygiene/revops-data-enrichment-orchestration/SKILL.md) | Routes missing data to enrichment providers and consolidates results. |
+| [Enrichment Route Plan Review](../agents/data-quality-crm-hygiene/revops-enrichment-orchestration/SKILL.md) | Reviews supplied pseudonymous enrichment routes against exact customer policy and provider-contract evidence. |
 | [Account Hierarchy Engine](../agents/data-quality-crm-hygiene/revops-data-account-hierarchy/SKILL.md) | Maps parent-child account relationships. |
 
 ## Marketing Operations
