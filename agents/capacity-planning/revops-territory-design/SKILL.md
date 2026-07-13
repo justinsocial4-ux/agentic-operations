@@ -49,8 +49,8 @@ Validate supplied candidate assignments without inventing an optimal, fair, bala
 10. Never convert straight-line distance into drive time, invent visit frequency, treat a ZIP centroid as a person location, or call separate anchor-to-account trips a weekly route.
 11. Treat solver output as external evidence. Preserve formulation/objective normalization, solver/version, seed, status, bounds, gap, tolerances, limits, determinism, constraint, and tie receipts.
 12. Never relabel `FEASIBLE`, `LIMIT`, `UNDETERMINED`, an incomplete model, or a violated-constraint candidate as `OPTIMAL`.
-13. Compare compatible scenarios descriptively: coverage, moved-account count, complete-population per-rep counts, same-basis amounts, constraint results, missingness, route coverage/totals, solver state, and workforce review state. Preserve every rep row even when a total is unresolved.
-14. Do not rank scenarios. Different populations, policies, amount bases, currencies, route policies, incomplete coverage, or incompatible constraints return `INCOMPARABLE`.
+13. Compare compatible scenarios descriptively: coverage, moved-account count and IDs, complete-population per-rep counts, same-basis amounts, constraint results, missingness, route coverage/totals, solver state, and workforce review state. Preserve every rep row even when a total is unresolved.
+14. Do not rank scenarios. Different populations, policies, amount bases, currencies, route policies, incomplete coverage, or incompatible constraints return `INCOMPARABLE`. Preserve the declared compatibility flags, independently calculated compatibility checks, and the exact incompatible lanes in the final comparison receipt.
 15. Do not create potential, balance, fairness, confidence, capacity, risk, attrition, quota, productivity, value, or outcome scores. Equal counts or amounts do not prove fairness.
 16. Keep unresolved identity, leave, ramp, accommodation, labor-rule, accessibility, overlay, team-ownership, and relationship questions in the review queue; never convert them to neutral values.
 17. Treat any preferred scenario as a human decision question. Require a preapproved decision rule, complete evidence, correction/appeal path, affected-party review, and named approver.
@@ -71,13 +71,13 @@ Return `POLICY_REQUIRED`, `SOURCE_REQUIRED`, `IDENTITY_REVIEW`, `INCOMPLETE_POPU
 3. **Validate assignments.** Prove exact account coverage and reject unknown, duplicate, missing, or unsupported assignments.
 4. **Check evidence and constraints.** Require a separate frozen evidence register for the current-assignment snapshot, then reject every current or candidate assignment, constraint, amount, or route evidence reference absent from its declared register. Evidence timestamps must be real second-precision UTC calendar values; evidence purpose and access scope must be opaque 128-bit IDs, never names, email addresses, or narrative tokens. Evaluate only the approved allowed, forbidden, pinned, count-bound, relationship, and shared/team rules with complete provenance.
 5. **Build evidence summaries.** Use the helper for complete-population per-rep counts, same-basis amounts, supplied-route coverage/totals, and solver receipts. Keep zero-assignment and unresolved rows explicit.
-6. **Compare without ranking.** Preserve moved accounts, missingness, incompatibilities, violations, and workforce review state.
+6. **Compare without ranking.** Preserve each scenario's moved-account count and IDs, every declared and actual compatibility check, exact incompatible lanes, missingness, violations, and workforce review state in the final helper-built receipt.
 7. **Prepare human review.** Present decision questions and approval gaps; do not select or implement a scenario.
 8. **Export bounded evidence.** Return the exact helper-rendered JSON response and nothing else.
 
 ## Output Contract
 
-Return exactly one artifact: the raw JSON string produced by `render_receipt_json(build_downstream_receipt(...))`. It contains the policy, population-bound rep-pseudonymization, frozen current-assignment and candidate evidence-register receipts, complete-population count/amount/route, fully versioned constraint, solver, comparison, approval, and no-action receipts. Every output number is helper-owned and appears only in that rendering. Do not wrap, restyle, summarize, duplicate, or correct it in model prose.
+Return exactly one artifact: the raw JSON string produced by `render_receipt_json(build_downstream_receipt(...))`. It contains the policy, population-bound rep-pseudonymization, frozen current-assignment and candidate evidence-register receipts, complete-population count/amount/route, fully versioned constraint, solver, comparison, approval, and no-action receipts. The comparison receipt retains the comparison state, declared flags, actual checks, exact incompatible lanes, and one moved-account count/ID record per scenario. Every output number is helper-owned and appears only in that rendering. Do not wrap, restyle, summarize, duplicate, or correct it in model prose.
 
 ## Failure Boundary
 

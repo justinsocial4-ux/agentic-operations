@@ -572,6 +572,68 @@ class TerritoryEvidenceTests(unittest.TestCase):
         self.assertEqual(result["boundary"], BOUNDARY)
         self.assertFalse({"recommendation", "best_scenario", "confidence", "quota", "fairness_score"}.intersection(result))
 
+    def test_receipt_preserves_moved_account_results_once(self):
+        reviews = [self.review("S-1"), self.review("S-2", True)]
+        result = build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=reviews, comparison=self.comparison(), reviewer="role-reviewer", approver="role-approver")
+        moved = result["comparison_receipt"]["scenarios"]
+        self.assertEqual(moved, [
+            {"scenario_id": "S-1", "moved_account_count": 0, "moved_account_ids": []},
+            {"scenario_id": "S-2", "moved_account_count": 1, "moved_account_ids": ["A-1"]},
+        ])
+        self.assertNotIn("moved_account_count", result["scenarios"][0])
+
+    def test_receipt_preserves_compatibility_diagnostics(self):
+        reviews = [self.review("S-1"), self.review("S-2", True)]
+        comparison = self.comparison()
+        result = build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=reviews, comparison=comparison, reviewer="role-reviewer", approver="role-approver")
+        receipt = result["comparison_receipt"]
+        self.assertEqual(receipt["declared_flags"], comparison["declared_flags"])
+        self.assertEqual(receipt["actual_checks"], comparison["actual_checks"])
+        self.assertEqual(receipt["incompatible_lanes"], ["same_constraints"])
+
+    def test_receipt_explains_declared_incompatibility(self):
+        reviews = [self.review("S-1"), self.review("S-2")]
+        comparison = compare_scenarios(scenario_reviews=reviews, current_assignment_rows=self.assignments(), current_evidence_rows=self.evidence(), same_population=False, same_policies=True, same_constraints=True, same_amount_basis=True, same_route_policy=True)
+        result = build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=reviews, comparison=comparison, reviewer="role-reviewer", approver="role-approver")
+        self.assertEqual(result["comparison_receipt"]["incompatible_lanes"], ["same_population"])
+
+    def test_receipt_rejects_forged_moved_account_count(self):
+        comparison = self.comparison()
+        comparison["scenarios"][1]["moved_account_count"] = 9
+        with self.assertRaises(ValueError):
+            build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2", True)], comparison=comparison, reviewer="role-reviewer", approver="role-approver")
+
+    def test_receipt_rejects_malformed_compatibility_diagnostics(self):
+        for lane, mutation in (
+            ("missing", lambda value: value["declared_flags"].pop("same_population")),
+            ("extra", lambda value: value["actual_checks"].__setitem__("same_magic", True)),
+            ("non_boolean", lambda value: value["actual_checks"].__setitem__("same_constraints", "yes")),
+        ):
+            with self.subTest(lane=lane):
+                comparison = self.comparison()
+                mutation(comparison)
+                with self.assertRaises(ValueError):
+                    build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2", True)], comparison=comparison, reviewer="role-reviewer", approver="role-approver")
+
+    def test_receipt_rejects_forged_actual_compatibility_check(self):
+        comparison = self.comparison()
+        comparison["actual_checks"]["same_constraints"] = True
+        with self.assertRaises(ValueError):
+            build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2", True)], comparison=comparison, reviewer="role-reviewer", approver="role-approver")
+
+    def test_receipt_rejects_free_text_moved_account_id(self):
+        comparison = self.comparison()
+        comparison["scenarios"][1]["moved_account_ids"] = ["Alice Smith"]
+        comparison["scenarios"][1]["moved_account_count"] = 1
+        with self.assertRaises(ValueError):
+            build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2", True)], comparison=comparison, reviewer="role-reviewer", approver="role-approver")
+
+    def test_receipt_rejects_comparison_scenario_set_mismatch(self):
+        comparison = self.comparison()
+        comparison["scenarios"] = comparison["scenarios"][:1]
+        with self.assertRaises(ValueError):
+            build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2", True)], comparison=comparison, reviewer="role-reviewer", approver="role-approver")
+
     def test_receipt_rejects_selected_comparison(self):
         comparison = self.comparison(); comparison["selected_scenario_id"] = "S-1"
         with self.assertRaises(ValueError): build_downstream_receipt(receipt_id="REC-1", cutoff="2026-07-10T12:00:00Z", timezone="UTC", policy_ids={"scope": "SCOPE-1"}, scenario_reviews=[self.review("S-1"), self.review("S-2")], comparison=comparison, reviewer="role-reviewer", approver="role-approver")
@@ -596,6 +658,9 @@ class TerritoryEvidenceTests(unittest.TestCase):
         self.assertEqual(rendered["scenarios"][0]["constraint_register"][0]["constraint_version"], "v1")
         self.assertEqual(rendered["current_assignment_evidence"][0]["source_version"], "v7")
         self.assertEqual(rendered["current_assignment_evidence_reference_receipt"]["assignment_evidence_ids"], ["E-1"])
+        self.assertEqual(rendered["comparison_receipt"]["state"], "INCOMPARABLE")
+        self.assertEqual(rendered["comparison_receipt"]["scenarios"][1]["moved_account_ids"], ["A-1"])
+        self.assertNotIn("comparison_state", rendered)
         self.assertIn("solver_receipt", rendered["scenarios"][1])
 
     def test_exact_json_renderer_rejects_non_object(self):

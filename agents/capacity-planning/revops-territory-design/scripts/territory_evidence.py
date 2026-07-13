@@ -15,6 +15,13 @@ PROHIBITED_PERSON_FIELDS = {
     "quota_attainment", "discipline", "attrition_risk", "productivity_score",
 }
 SOLVER_STATUSES = {"OPTIMAL", "FEASIBLE", "INFEASIBLE", "UNBOUNDED", "LIMIT", "UNDETERMINED", "NOT_RUN"}
+COMPARABILITY_LANES = (
+    "same_population",
+    "same_policies",
+    "same_constraints",
+    "same_amount_basis",
+    "same_route_policy",
+)
 REP_ID_RE = re.compile(r"^rep-[0-9a-f]{32}$")
 OPAQUE_RECEIPT_ID_RE = re.compile(r"^receipt-[0-9a-f]{32}$")
 OPAQUE_PURPOSE_ID_RE = re.compile(r"^purpose-[0-9a-f]{32}$")
@@ -688,12 +695,7 @@ def scenario_review(*, scenario_id, account_ids, rep_ids, assignment_rows, evide
     }
 
 
-def compare_scenarios(*, scenario_reviews, current_assignment_rows, current_evidence_rows, same_population, same_policies, same_constraints, same_amount_basis, same_route_policy, current_shared_model=None):
-    if not isinstance(scenario_reviews, list) or len(scenario_reviews) < 2:
-        raise ValueError("at least two scenario reviews are required")
-    flags = {"same_population": same_population, "same_policies": same_policies, "same_constraints": same_constraints, "same_amount_basis": same_amount_basis, "same_route_policy": same_route_policy}
-    for name, value in flags.items():
-        _boolean(value, name)
+def _scenario_compatibility_checks(scenario_reviews):
     population_signatures = {
         (
             tuple(review["assignments"]["account_ids"]),
@@ -714,13 +716,22 @@ def compare_scenarios(*, scenario_reviews, current_assignment_rows, current_evid
     }
     amount_signatures = {tuple(sorted((review["amounts"]["basis"] or {}).items())) for review in scenario_reviews}
     route_signatures = {tuple(sorted((review["routes"]["route_policy"] or {}).items())) for review in scenario_reviews}
-    actual_checks = {
+    return {
         "same_population": len(population_signatures) == 1,
         "same_policies": len(policy_signatures) == 1,
         "same_constraints": len(constraint_signatures) == 1,
         "same_amount_basis": len(amount_signatures) == 1,
         "same_route_policy": len(route_signatures) == 1,
     }
+
+
+def compare_scenarios(*, scenario_reviews, current_assignment_rows, current_evidence_rows, same_population, same_policies, same_constraints, same_amount_basis, same_route_policy, current_shared_model=None):
+    if not isinstance(scenario_reviews, list) or len(scenario_reviews) < 2:
+        raise ValueError("at least two scenario reviews are required")
+    flags = {"same_population": same_population, "same_policies": same_policies, "same_constraints": same_constraints, "same_amount_basis": same_amount_basis, "same_route_policy": same_route_policy}
+    for name, value in flags.items():
+        _boolean(value, name)
+    actual_checks = _scenario_compatibility_checks(scenario_reviews)
     current = reconcile_assignments(
         account_ids=sorted({account_id for review in scenario_reviews for account_id in review["assignments"]["account_ids"]}),
         rep_ids=sorted({rep_id for review in scenario_reviews for rep_id in review["assignments"]["rep_ids"]}),
@@ -775,6 +786,88 @@ def compare_scenarios(*, scenario_reviews, current_assignment_rows, current_evid
     }
 
 
+def _build_comparison_receipt(comparison, scenario_reviews):
+    """Preserve bounded comparison proof without repeating scenario totals."""
+    if not isinstance(comparison, dict):
+        raise ValueError("comparison must be an object")
+    state = comparison.get("state")
+    if state not in {"VALID", "INCOMPARABLE"}:
+        raise ValueError("comparison state must be VALID or INCOMPARABLE")
+
+    diagnostics = {}
+    for field in ("declared_flags", "actual_checks"):
+        values = comparison.get(field)
+        if not isinstance(values, dict) or set(values) != set(COMPARABILITY_LANES):
+            raise ValueError(f"comparison {field} must contain exactly the supported compatibility lanes")
+        diagnostics[field] = {
+            lane: _boolean(values[lane], f"comparison {field}.{lane}")
+            for lane in COMPARABILITY_LANES
+        }
+    if diagnostics["actual_checks"] != _scenario_compatibility_checks(scenario_reviews):
+        raise ValueError("comparison actual_checks must match the reviewed scenario evidence")
+
+    review_ids = []
+    account_ids = set()
+    for review in scenario_reviews:
+        if not isinstance(review, dict):
+            raise ValueError("each scenario review must be an object")
+        scenario_id = _stable_identifier(review.get("scenario_id"), "scenario review scenario_id")
+        review_ids.append(scenario_id)
+        assignments = review.get("assignments")
+        if not isinstance(assignments, dict):
+            raise ValueError("scenario review assignments must be an object")
+        account_ids.update(_identifier_list(assignments.get("account_ids"), "scenario review account_ids"))
+    if len(review_ids) != len(set(review_ids)):
+        raise ValueError("scenario reviews must have unique scenario IDs")
+
+    comparison_rows = comparison.get("scenarios")
+    if not isinstance(comparison_rows, list):
+        raise ValueError("comparison scenarios must be a list")
+    moved_rows = []
+    seen_ids = []
+    for row in comparison_rows:
+        if not isinstance(row, dict):
+            raise ValueError("each comparison scenario must be an object")
+        scenario_id = _stable_identifier(row.get("scenario_id"), "comparison scenario_id")
+        raw_moved_ids = row.get("moved_account_ids")
+        if not isinstance(raw_moved_ids, list):
+            raise ValueError("moved_account_ids must be a list")
+        moved_ids = [_stable_identifier(value, "moved_account_id") for value in raw_moved_ids]
+        if len(moved_ids) != len(set(moved_ids)):
+            raise ValueError("moved_account_ids must contain unique stable IDs")
+        if moved_ids != sorted(moved_ids):
+            raise ValueError("moved_account_ids must be sorted")
+        if not set(moved_ids).issubset(account_ids):
+            raise ValueError("moved_account_ids must belong to the declared scenario population")
+        moved_count = _count(row.get("moved_account_count"), "moved_account_count")
+        if moved_count != len(moved_ids):
+            raise ValueError("moved_account_count must equal the unique moved_account_ids length")
+        seen_ids.append(scenario_id)
+        moved_rows.append({
+            "scenario_id": scenario_id,
+            "moved_account_count": moved_count,
+            "moved_account_ids": moved_ids,
+        })
+    if len(seen_ids) != len(set(seen_ids)) or sorted(seen_ids) != sorted(review_ids):
+        raise ValueError("comparison scenarios must exactly match the scenario reviews")
+
+    moved_rows.sort(key=lambda row: row["scenario_id"])
+    incompatible_lanes = [
+        lane
+        for lane in COMPARABILITY_LANES
+        if not diagnostics["declared_flags"][lane] or not diagnostics["actual_checks"][lane]
+    ]
+    if state == "VALID" and (incompatible_lanes or any(review.get("state") != "VALID" for review in scenario_reviews)):
+        raise ValueError("VALID comparison requires compatible lanes and valid scenarios")
+    return {
+        "state": state,
+        "declared_flags": diagnostics["declared_flags"],
+        "actual_checks": diagnostics["actual_checks"],
+        "incompatible_lanes": incompatible_lanes,
+        "scenarios": moved_rows,
+    }
+
+
 def build_downstream_receipt(*, receipt_id, cutoff, timezone, policy_ids, scenario_reviews, comparison, reviewer, approver, decision_rule_id=None, approval_state="APPROVAL_REQUIRED"):
     _stable_identifier(receipt_id, "receipt_id")
     cutoff = _utc_timestamp(cutoff, "cutoff")
@@ -796,6 +889,7 @@ def build_downstream_receipt(*, receipt_id, cutoff, timezone, policy_ids, scenar
         raise ValueError("decision review requires complete comparable scenario evidence")
     if comparison.get("selected_scenario_id") is not None or comparison.get("ranked") is not False:
         raise ValueError("comparison must remain non-ranked and unselected")
+    comparison_receipt = _build_comparison_receipt(comparison, scenario_reviews)
     scenario_rows = []
     for review in sorted(scenario_reviews, key=lambda item: item["scenario_id"]):
         scenario_rows.append({
@@ -829,7 +923,7 @@ def build_downstream_receipt(*, receipt_id, cutoff, timezone, policy_ids, scenar
         "timezone": timezone,
         "policy_ids": clean_policies,
         "scenarios": scenario_rows,
-        "comparison_state": comparison["state"],
+        "comparison_receipt": comparison_receipt,
         "current_assignment_evidence": comparison["current_assignment_evidence"],
         "current_assignment_evidence_ids": comparison["current_assignment_evidence_ids"],
         "current_assignment_evidence_reference_receipt": comparison["current_assignment_evidence_reference_receipt"],
