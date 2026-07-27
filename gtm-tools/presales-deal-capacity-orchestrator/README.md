@@ -19,6 +19,57 @@ Outputs are inert recommendations that a manager reviews and disposes of locally
 > `NOT_LIVE_VALIDATED`. Production readiness is `NOT_ASSESSED`. See
 > [Proof vocabulary](#proof-vocabulary).
 
+## Quick visual map
+
+```mermaid
+flowchart LR
+    START["Hiring manager Kevin"] --> CHOOSE{"How to start?"}
+    CHOOSE -->|no credentials| A["Fictional demo"]
+    CHOOSE -->|own files| B["Import CSV/JSON"]
+    CHOOSE -->|own token| C["Connect read-only"]
+    A --> ENGINE["Deterministic engine"]
+    B --> MAP["Field mapping + data health"] --> ENGINE
+    C --> ADAPT["Salesforce / ClickUp / Fathom / Gong"] --> ENGINE
+    ENGINE --> REC["Recommendation only"]
+    REC --> MGR["Manager accepts / overrides / rejects / defers"]
+    MGR --> EXPORT["Inert export — nothing written back"]
+```
+
+Three ways in; one engine; the manager decides; nothing is written back.
+
+## How the engine decides (7 stages)
+
+```mermaid
+flowchart TD
+    S1["1 — Gather the deals and consultants"] --> S2["2 — Check each deal's readiness"]
+    S2 -->|each dimension needs an exact citation| S3["3 — Rank deals by priority"]
+    S3 -->|urgency + readiness + commercial value| S4["4 — Find eligible consultants"]
+    S4 -->|manager-approved only; skills + capacity, never call text| S5["5 — Match consultants to deals"]
+    S5 -->|OR-Tools CP-SAT solves the whole portfolio OPTIMAL| S6["6 — Check the capacity impact"]
+    S6 -->|EMEA +25% effort scenario, not a forecast| S7["7 — Hand off to the manager"]
+    S7 --> STOP["Engine stops. Manager decides. Nothing booked."]
+```
+
+Click **Run the engine** to watch this flow execute live, with each stage's
+reasoning narrated as it runs.
+
+## What the engine won't do (boundaries)
+
+```mermaid
+flowchart LR
+    T["Transcripts"] -->|can satisfy a versioned readiness dimension| R["Deal readiness"]
+    T -.->|never| CF["Consultant fit / selection"]
+    T -.->|never| SC["Employee scoring / ranking"]
+    T -.->|never| WR["CRM write / task / webhook / assignment"]
+    WR -.->|never| ANY["Any external system"]
+    WIN["Individual win rate"] -.->|never| SC
+    LLM["Local analyst"] -->|loopback only| T
+    LLM -.->|never| REM["Remote model / cloud"]
+```
+
+- Transcripts can prove a deal's readiness facts; they can never pick or score a consultant.
+- No individual win-rate input; no remote model for private transcripts; export is inert.
+
 ---
 
 ## Quick start (fictional demo — no credentials, no network)
