@@ -1,0 +1,65 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "adapter_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "auth_mode": {
+      "title": "Auth Mode",
+      "type": "string"
+    },
+    "credential_persisted": {
+      "const": false,
+      "default": false,
+      "title": "Credential Persisted",
+      "type": "boolean"
+    },
+    "external_write_attempted": {
+      "const": false,
+      "default": false,
+      "title": "External Write Attempted",
+      "type": "boolean"
+    },
+    "permitted_operation_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "title": "Permitted Operation Ids",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "orchestrator.connector-preflight.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_identity_fingerprint": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Identity Fingerprint",
+      "type": "string"
+    },
+    "source_instance_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Source Instance Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "adapter_id",
+    "source_instance_id",
+    "source_identity_fingerprint",
+    "auth_mode",
+    "permitted_operation_ids"
+  ],
+  "title": "ConnectorPreflightReceiptV1",
+  "type": "object"
+}

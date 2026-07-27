@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "DigestFactV2": {
+      "additionalProperties": false,
+      "properties": {
+        "fact_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "source_artifact_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Source Artifact Id",
+          "type": "string"
+        },
+        "statement": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fact_id",
+        "source_artifact_id",
+        "statement"
+      ],
+      "title": "DigestFactV2",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "digest_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Digest Id",
+      "type": "string"
+    },
+    "facts": {
+      "items": {
+        "$ref": "#/$defs/DigestFactV2"
+      },
+      "title": "Facts",
+      "type": "array"
+    },
+    "generation_mode": {
+      "const": "DETERMINISTIC_FACT_BOUND",
+      "title": "Generation Mode",
+      "type": "string"
+    },
+    "mapping_profile_sha256s": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Mapping Profile Sha256S",
+      "type": "array"
+    },
+    "policy_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Sha256",
+      "type": "string"
+    },
+    "production_readiness": {
+      "const": "NOT_ASSESSED",
+      "title": "Production Readiness",
+      "type": "string"
+    },
+    "recommendation_only": {
+      "const": true,
+      "title": "Recommendation Only",
+      "type": "boolean"
+    },
+    "run_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.leadership-digest.v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_manifest_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Manifest Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "policy_sha256",
+    "source_manifest_ids",
+    "mapping_profile_sha256s",
+    "schema_version",
+    "digest_id",
+    "generation_mode",
+    "facts",
+    "recommendation_only",
+    "production_readiness",
+    "created_at"
+  ],
+  "title": "LeadershipDigestV2",
+  "type": "object"
+}

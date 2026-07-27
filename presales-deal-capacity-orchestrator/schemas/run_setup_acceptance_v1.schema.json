@@ -1,0 +1,229 @@
+{
+  "$defs": {
+    "ConfirmationActionV1": {
+      "additionalProperties": false,
+      "properties": {
+        "action_kind": {
+          "enum": [
+            "AUTHORITY_AND_CORE",
+            "ADVANCED_REVIEWED_DEFAULTS"
+          ],
+          "title": "Action Kind",
+          "type": "string"
+        },
+        "action_number": {
+          "enum": [
+            1,
+            2
+          ],
+          "title": "Action Number",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "action_number",
+        "action_kind"
+      ],
+      "title": "ConfirmationActionV1",
+      "type": "object"
+    },
+    "FieldAcceptanceV1": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptance": {
+          "enum": [
+            "DIRECT",
+            "GROUPED"
+          ],
+          "title": "Acceptance",
+          "type": "string"
+        },
+        "field_name": {
+          "minLength": 1,
+          "title": "Field Name",
+          "type": "string"
+        },
+        "value_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Value Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field_name",
+        "value_sha256",
+        "acceptance"
+      ],
+      "title": "FieldAcceptanceV1",
+      "type": "object"
+    },
+    "LaneV1": {
+      "enum": [
+        "DEAL_PRIORITIZATION",
+        "ASSIGNMENT_RECOMMENDATION",
+        "CAPACITY_HEATMAP"
+      ],
+      "title": "LaneV1",
+      "type": "string"
+    },
+    "SourceModeV1": {
+      "enum": [
+        "FICTIONAL",
+        "FILE_IMPORT",
+        "DIRECT_CONNECTOR",
+        "MOCK_REPLAY"
+      ],
+      "title": "SourceModeV1",
+      "type": "string"
+    },
+    "SourceSlotSelectionV1": {
+      "additionalProperties": false,
+      "description": "Authority selected before preflight; no source instance ID exists here.",
+      "properties": {
+        "adapter_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Adapter Id",
+          "type": "string"
+        },
+        "authority_role": {
+          "enum": [
+            "DEALS_PRIMARY",
+            "ROSTER_PRIMARY",
+            "CAPACITY_PRIMARY",
+            "WORKLOAD_PRIMARY",
+            "CONVERSATION_ADDITIVE"
+          ],
+          "title": "Authority Role",
+          "type": "string"
+        },
+        "expected_non_secret_identity_fingerprint": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Non Secret Identity Fingerprint"
+        },
+        "source_mode": {
+          "$ref": "#/$defs/SourceModeV1"
+        },
+        "source_slot_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Source Slot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_slot_id",
+        "authority_role",
+        "adapter_id",
+        "source_mode"
+      ],
+      "title": "SourceSlotSelectionV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Complete single-screen gate with authority folded into at most two actions.",
+  "properties": {
+    "accepted_at": {
+      "format": "date-time",
+      "title": "Accepted At",
+      "type": "string"
+    },
+    "actions": {
+      "items": {
+        "$ref": "#/$defs/ConfirmationActionV1"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Actions",
+      "type": "array"
+    },
+    "actor": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Actor",
+      "type": "string"
+    },
+    "advanced_field_acceptances": {
+      "items": {
+        "$ref": "#/$defs/FieldAcceptanceV1"
+      },
+      "minItems": 1,
+      "title": "Advanced Field Acceptances",
+      "type": "array"
+    },
+    "authority_binding_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Authority Binding Sha256",
+      "type": "string"
+    },
+    "authority_confirmed": {
+      "const": true,
+      "title": "Authority Confirmed",
+      "type": "boolean"
+    },
+    "core_field_acceptances": {
+      "items": {
+        "$ref": "#/$defs/FieldAcceptanceV1"
+      },
+      "minItems": 1,
+      "title": "Core Field Acceptances",
+      "type": "array"
+    },
+    "lane": {
+      "$ref": "#/$defs/LaneV1"
+    },
+    "run_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.run-setup-acceptance.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "second_setup_screen": {
+      "const": false,
+      "title": "Second Setup Screen",
+      "type": "boolean"
+    },
+    "source_slots": {
+      "items": {
+        "$ref": "#/$defs/SourceSlotSelectionV1"
+      },
+      "minItems": 1,
+      "title": "Source Slots",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "run_id",
+    "lane",
+    "actor",
+    "accepted_at",
+    "authority_confirmed",
+    "source_slots",
+    "authority_binding_sha256",
+    "core_field_acceptances",
+    "advanced_field_acceptances",
+    "actions",
+    "second_setup_screen"
+  ],
+  "title": "RunSetupAcceptanceV1",
+  "type": "object"
+}

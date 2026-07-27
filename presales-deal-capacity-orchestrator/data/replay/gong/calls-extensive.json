@@ -1,0 +1,13 @@
+{
+  "calls": [
+    {
+      "metaData": {"id": "gong-call-1", "started": "2026-08-03T09:00:00Z", "duration": 2700},
+      "parties": [
+        {"speakerId": "spk-internal", "affiliation": "Internal", "name": "Fictional SC", "emailAddress": "sc@example.invalid"},
+        {"speakerId": "spk-external", "affiliation": "External", "name": "Fictional Buyer", "emailAddress": "buyer@example.invalid"}
+      ],
+      "unmapped_future_field": "ignored on translation"
+    }
+  ],
+  "records": {}
+}

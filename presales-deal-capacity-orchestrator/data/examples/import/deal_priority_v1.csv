@@ -1,0 +1,2 @@
+work_id,deal_id,request_type,milestone_type,due_at,amount,currency,basis,evidence_refs,fresh_at,lineage_refs,SE Need,Bench,Hero
+work-1,deal-1,DEMO_REQUEST,POC,2026-08-14T12:00:00Z,125000.00,USD,demo-corporate-bookings-v1,evidence-1,2026-08-01T12:00:00Z,lineage-import-1,unknown-a,unknown-b,unknown-c

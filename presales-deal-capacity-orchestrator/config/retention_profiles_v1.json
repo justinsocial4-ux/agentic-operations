@@ -1,0 +1,11 @@
+{
+  "schema_version": "orchestrator.retention-profiles.v1",
+  "credentials": "NEVER",
+  "vendor_cursors": "NEVER",
+  "full_transcript_text": "NEVER",
+  "uncited_segments": "NEVER",
+  "cited_excerpts_default": "SESSION_ONLY",
+  "canonical_operational_default_days": 7,
+  "conversation_metadata_default_days": 7,
+  "mapping_profiles": "UNTIL_RESET"
+}

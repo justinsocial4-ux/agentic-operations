@@ -1,0 +1,322 @@
+{
+  "$defs": {
+    "EndpointCapabilityV1": {
+      "additionalProperties": false,
+      "properties": {
+        "body_bounds": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/RequestBodyBoundsV1"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "host": {
+          "maxLength": 253,
+          "minLength": 1,
+          "title": "Host",
+          "type": "string"
+        },
+        "idempotent_retryable": {
+          "default": false,
+          "title": "Idempotent Retryable",
+          "type": "boolean"
+        },
+        "method": {
+          "enum": [
+            "GET",
+            "POST"
+          ],
+          "title": "Method",
+          "type": "string"
+        },
+        "operation_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Operation Id",
+          "type": "string"
+        },
+        "path_template": {
+          "pattern": "^/[^?#]*$",
+          "title": "Path Template",
+          "type": "string"
+        },
+        "read_by_post": {
+          "default": false,
+          "title": "Read By Post",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "operation_id",
+        "method",
+        "host",
+        "path_template"
+      ],
+      "title": "EndpointCapabilityV1",
+      "type": "object"
+    },
+    "OfficialArtifactPinV1": {
+      "additionalProperties": false,
+      "properties": {
+        "api_version": {
+          "title": "Api Version",
+          "type": "string"
+        },
+        "approved_host_set": {
+          "items": {
+            "maxLength": 253,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Approved Host Set",
+          "type": "array"
+        },
+        "approved_host_set_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Approved Host Set Sha256",
+          "type": "string"
+        },
+        "artifact_declared_servers": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Artifact Declared Servers",
+          "type": "array"
+        },
+        "artifact_path": {
+          "title": "Artifact Path",
+          "type": "string"
+        },
+        "manual_review_status": {
+          "enum": [
+            "APPROVED_WITH_REJECTED_GENERATED_SERVERS",
+            "APPROVED"
+          ],
+          "title": "Manual Review Status",
+          "type": "string"
+        },
+        "openapi_version": {
+          "title": "Openapi Version",
+          "type": "string"
+        },
+        "operation_ids_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Operation Ids Sha256",
+          "type": "string"
+        },
+        "rejected_declared_servers": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Rejected Declared Servers",
+          "type": "array"
+        },
+        "retrieval_url": {
+          "pattern": "^https://",
+          "title": "Retrieval Url",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+          "title": "Retrieved At",
+          "type": "string"
+        },
+        "sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Sha256",
+          "type": "string"
+        },
+        "version_parameter": {
+          "title": "Version Parameter",
+          "type": "string"
+        }
+      },
+      "required": [
+        "retrieval_url",
+        "retrieved_at",
+        "version_parameter",
+        "openapi_version",
+        "api_version",
+        "sha256",
+        "artifact_path",
+        "artifact_declared_servers",
+        "approved_host_set",
+        "approved_host_set_sha256",
+        "operation_ids_sha256",
+        "manual_review_status"
+      ],
+      "title": "OfficialArtifactPinV1",
+      "type": "object"
+    },
+    "RequestBodyBoundsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "allowed_keys": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Allowed Keys",
+          "type": "array"
+        },
+        "forbidden_keys": {
+          "default": [
+            "url",
+            "callback",
+            "callback_url",
+            "destination_url",
+            "webhook"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "title": "Forbidden Keys",
+          "type": "array"
+        },
+        "max_body_bytes": {
+          "maximum": 65536,
+          "minimum": 1,
+          "title": "Max Body Bytes",
+          "type": "integer"
+        },
+        "max_date_window_days": {
+          "maximum": 30,
+          "minimum": 1,
+          "title": "Max Date Window Days",
+          "type": "integer"
+        },
+        "max_ids": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max Ids",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_ids",
+        "max_body_bytes",
+        "max_date_window_days"
+      ],
+      "title": "RequestBodyBoundsV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "adapter_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "external_writes_supported": {
+      "const": false,
+      "title": "External Writes Supported",
+      "type": "boolean"
+    },
+    "object_kinds": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Object Kinds",
+      "type": "array"
+    },
+    "official_artifact": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/OfficialArtifactPinV1"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "operations": {
+      "items": {
+        "$ref": "#/$defs/EndpointCapabilityV1"
+      },
+      "title": "Operations",
+      "type": "array"
+    },
+    "package_version": {
+      "title": "Package Version",
+      "type": "string"
+    },
+    "permitted_authentication_modes": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Permitted Authentication Modes",
+      "type": "array"
+    },
+    "schema_discovery_supported": {
+      "title": "Schema Discovery Supported",
+      "type": "boolean"
+    },
+    "schema_version": {
+      "const": "orchestrator.adapter-capability.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_api_family": {
+      "title": "Source Api Family",
+      "type": "string"
+    },
+    "source_api_version": {
+      "title": "Source Api Version",
+      "type": "string"
+    },
+    "source_kinds": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Kinds",
+      "type": "array"
+    },
+    "supported_cursor_semantics": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Supported Cursor Semantics",
+      "type": "array"
+    },
+    "transcript_available": {
+      "title": "Transcript Available",
+      "type": "boolean"
+    },
+    "write_operation_ids": {
+      "default": [],
+      "maxItems": 0,
+      "minItems": 0,
+      "title": "Write Operation Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "adapter_id",
+    "package_version",
+    "source_api_family",
+    "source_api_version",
+    "source_kinds",
+    "object_kinds",
+    "permitted_authentication_modes",
+    "operations",
+    "schema_discovery_supported",
+    "transcript_available",
+    "external_writes_supported"
+  ],
+  "title": "AdapterCapabilityV1",
+  "type": "object"
+}

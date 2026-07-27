@@ -1,0 +1,90 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "adapter_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "deleted_source_record_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Deleted Source Record Ids",
+      "type": "array"
+    },
+    "deletion_receipt_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Deletion Receipt Id",
+      "type": "string"
+    },
+    "deletion_state": {
+      "enum": [
+        "DELETIONS_CONFIRMED",
+        "DELETION_UNKNOWN"
+      ],
+      "title": "Deletion State",
+      "type": "string"
+    },
+    "feed_complete": {
+      "title": "Feed Complete",
+      "type": "boolean"
+    },
+    "historical_receipt_preserved": {
+      "const": true,
+      "default": true,
+      "title": "Historical Receipt Preserved",
+      "type": "boolean"
+    },
+    "object_kind": {
+      "title": "Object Kind",
+      "type": "string"
+    },
+    "response_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Response Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.deletion-receipt.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_instance_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Source Instance Id",
+      "type": "string"
+    },
+    "window_begin": {
+      "format": "date-time",
+      "title": "Window Begin",
+      "type": "string"
+    },
+    "window_end": {
+      "format": "date-time",
+      "title": "Window End",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "deletion_receipt_id",
+    "adapter_id",
+    "source_instance_id",
+    "object_kind",
+    "window_begin",
+    "window_end",
+    "deleted_source_record_ids",
+    "feed_complete",
+    "deletion_state",
+    "response_sha256"
+  ],
+  "title": "DeletionReceiptV1",
+  "type": "object"
+}

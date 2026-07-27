@@ -1,0 +1,25 @@
+{
+  "schema_version": "orchestrator.gong-openapi-review.v1",
+  "retrieval_url": "https://gong.app.gong.io/ajax/settings/api/documentation/specs?version=",
+  "retrieved_at": "2026-07-24",
+  "version_parameter": "",
+  "openapi_version": "3.0.1",
+  "api_version": "V2",
+  "artifact_path": "data/replay/gong/official-openapi-v2.json",
+  "artifact_sha256": "4583f7a19d8f8328e6eb8d85829e1632eda335a9010c0d2f09d9dedeb07b6bd6",
+  "artifact_declared_servers": ["https://127.0.0.1:8443"],
+  "rejected_declared_servers": ["https://127.0.0.1:8443"],
+  "rejection_reason": "Generated loopback server is not a vendor API host and violates the vendor non-loopback policy.",
+  "approved_host_set": ["api.gong.io"],
+  "approved_host_set_sha256": "08d795d7f4d9d1f888caeb437847e09324414003953c6b9d135b87f478224293",
+  "operation_ids_sha256": "189c47344a27684c880d77d7fc4a24d94a646e79f0e02ee4b02d7953aed18b5c",
+  "operations": [
+    {"operation_id": "listCalls", "method": "GET", "path": "/v2/calls"},
+    {"operation_id": "listCallsExtensive", "method": "POST", "path": "/v2/calls/extensive"},
+    {"operation_id": "getCallTranscripts", "method": "POST", "path": "/v2/calls/transcript"},
+    {"operation_id": "listUsers", "method": "GET", "path": "/v2/users"}
+  ],
+  "excluded_mutation_operation": {"operation_id": "addCall", "method": "POST", "path": "/v2/calls"},
+  "manual_review_status": "APPROVED_WITH_REJECTED_GENERATED_SERVERS",
+  "live_validation_proof": "NOT_LIVE_VALIDATED"
+}

@@ -1,0 +1,110 @@
+{
+  "additionalProperties": false,
+  "description": "Ephemeral only. Persistence code must never accept this model.",
+  "properties": {
+    "conversation_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Conversation Id",
+      "type": "string"
+    },
+    "deal_source_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Deal Source Id",
+      "type": "string"
+    },
+    "lineage_receipt_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Lineage Receipt Id",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "relative_begin_ms": {
+      "minimum": 0,
+      "title": "Relative Begin Ms",
+      "type": "integer"
+    },
+    "relative_end_ms": {
+      "minimum": 0,
+      "title": "Relative End Ms",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "orchestrator.conversation-segment.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "segment_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Segment Id",
+      "type": "string"
+    },
+    "source_record_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Source Record Id",
+      "type": "string"
+    },
+    "speaker_ref": {
+      "enum": [
+        "CUSTOMER",
+        "INTERNAL",
+        "UNKNOWN"
+      ],
+      "title": "Speaker Ref",
+      "type": "string"
+    },
+    "speaker_source_label": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Speaker Source Label"
+    },
+    "text": {
+      "maxLength": 262144,
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    },
+    "text_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Text Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "conversation_id",
+    "deal_source_id",
+    "segment_id",
+    "speaker_ref",
+    "occurred_at",
+    "relative_begin_ms",
+    "relative_end_ms",
+    "text",
+    "source_record_id",
+    "text_sha256",
+    "lineage_receipt_id"
+  ],
+  "title": "ConversationSegmentV1",
+  "type": "object"
+}

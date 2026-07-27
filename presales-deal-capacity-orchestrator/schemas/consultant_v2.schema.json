@@ -1,0 +1,104 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "active_eligibility": {
+      "title": "Active Eligibility",
+      "type": "boolean"
+    },
+    "consultant_source_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Consultant Source Id",
+      "type": "string"
+    },
+    "languages": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Languages"
+    },
+    "manager_approved_skill_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "title": "Manager Approved Skill Ids",
+      "type": "array"
+    },
+    "policy_receipt_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Policy Receipt Ids",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "orchestrator.consultant.v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "supported_region_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "title": "Supported Region Ids",
+      "type": "array"
+    },
+    "time_zone": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Time Zone"
+    },
+    "working_windows": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Working Windows"
+    }
+  },
+  "required": [
+    "schema_version",
+    "consultant_source_id",
+    "active_eligibility",
+    "supported_region_ids",
+    "manager_approved_skill_ids",
+    "policy_receipt_ids"
+  ],
+  "title": "ConsultantV2",
+  "type": "object"
+}

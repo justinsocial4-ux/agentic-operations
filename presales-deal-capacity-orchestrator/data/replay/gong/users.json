@@ -1,0 +1,6 @@
+{
+  "users": [
+    {"id": "spk-internal", "active": true, "emailAddress": "sc@example.invalid", "firstName": "Fictional", "lastName": "SC"}
+  ],
+  "records": {}
+}

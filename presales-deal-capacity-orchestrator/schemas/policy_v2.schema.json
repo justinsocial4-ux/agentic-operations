@@ -1,0 +1,416 @@
+{
+  "$defs": {
+    "CommercialCurrencyBasisV1": {
+      "additionalProperties": false,
+      "properties": {
+        "basis_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Basis Id",
+          "type": "string"
+        },
+        "currency": {
+          "pattern": "^[A-Z]{3}$",
+          "title": "Currency",
+          "type": "string"
+        }
+      },
+      "required": [
+        "currency",
+        "basis_id"
+      ],
+      "title": "CommercialCurrencyBasisV1",
+      "type": "object"
+    },
+    "MatchComponentWeightsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "capacity_headroom": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Capacity Headroom",
+          "type": "integer"
+        },
+        "continuity": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Continuity",
+          "type": "integer"
+        },
+        "overlap_surplus": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Overlap Surplus",
+          "type": "integer"
+        },
+        "skill_surplus": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Skill Surplus",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "skill_surplus",
+        "continuity",
+        "overlap_surplus",
+        "capacity_headroom"
+      ],
+      "title": "MatchComponentWeightsV1",
+      "type": "object"
+    },
+    "PriorityWeightBoundsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "commercial_value": {
+          "$ref": "#/$defs/WeightRangeV1"
+        },
+        "milestone_urgency": {
+          "$ref": "#/$defs/WeightRangeV1"
+        },
+        "readiness_evidence": {
+          "$ref": "#/$defs/WeightRangeV1"
+        }
+      },
+      "required": [
+        "milestone_urgency",
+        "readiness_evidence",
+        "commercial_value"
+      ],
+      "title": "PriorityWeightBoundsV1",
+      "type": "object"
+    },
+    "PriorityWeightsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "commercial_value": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Commercial Value",
+          "type": "integer"
+        },
+        "milestone_urgency": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Milestone Urgency",
+          "type": "integer"
+        },
+        "readiness_evidence": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Readiness Evidence",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "milestone_urgency",
+        "readiness_evidence",
+        "commercial_value"
+      ],
+      "title": "PriorityWeightsV1",
+      "type": "object"
+    },
+    "ScenarioBoundariesV1": {
+      "additionalProperties": false,
+      "properties": {
+        "effort_multiplier": {
+          "const": "1.25",
+          "title": "Effort Multiplier",
+          "type": "string"
+        },
+        "region_id": {
+          "const": "EMEA",
+          "title": "Region Id",
+          "type": "string"
+        },
+        "rounding": {
+          "const": "CEILING_TO_CAPACITY_UNIT",
+          "title": "Rounding",
+          "type": "string"
+        }
+      },
+      "required": [
+        "region_id",
+        "effort_multiplier",
+        "rounding"
+      ],
+      "title": "ScenarioBoundariesV1",
+      "type": "object"
+    },
+    "SkillCatalogEntryV1": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "maxLength": 80,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "minimum_level": {
+          "maximum": 4,
+          "minimum": 0,
+          "title": "Minimum Level",
+          "type": "integer"
+        },
+        "skill_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Skill Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "skill_id",
+        "label",
+        "minimum_level"
+      ],
+      "title": "SkillCatalogEntryV1",
+      "type": "object"
+    },
+    "SolverConfigV1": {
+      "additionalProperties": false,
+      "properties": {
+        "phase_limit_seconds": {
+          "maximum": 30,
+          "minimum": 1,
+          "title": "Phase Limit Seconds",
+          "type": "integer"
+        },
+        "random_seed": {
+          "minimum": 0,
+          "title": "Random Seed",
+          "type": "integer"
+        },
+        "release_requires_optimal": {
+          "const": true,
+          "title": "Release Requires Optimal",
+          "type": "boolean"
+        },
+        "worker_count": {
+          "const": 1,
+          "title": "Worker Count",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "worker_count",
+        "random_seed",
+        "phase_limit_seconds",
+        "release_requires_optimal"
+      ],
+      "title": "SolverConfigV1",
+      "type": "object"
+    },
+    "UrgencyBreakpointV1": {
+      "additionalProperties": false,
+      "properties": {
+        "feature_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Feature Bp",
+          "type": "integer"
+        },
+        "latest_days_until_due": {
+          "maximum": 28,
+          "minimum": 0,
+          "title": "Latest Days Until Due",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "latest_days_until_due",
+        "feature_bp"
+      ],
+      "title": "UrgencyBreakpointV1",
+      "type": "object"
+    },
+    "WeightRangeV1": {
+      "additionalProperties": false,
+      "properties": {
+        "maximum_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Maximum Bp",
+          "type": "integer"
+        },
+        "minimum_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Minimum Bp",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "minimum_bp",
+        "maximum_bp"
+      ],
+      "title": "WeightRangeV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "capacity_completeness_window": {
+      "enum": [
+        "THROUGH_MILESTONE",
+        "FOUR_WEEK_HORIZON"
+      ],
+      "title": "Capacity Completeness Window",
+      "type": "string"
+    },
+    "capacity_unit_minutes": {
+      "const": 30,
+      "title": "Capacity Unit Minutes",
+      "type": "integer"
+    },
+    "commercial_currency_basis": {
+      "$ref": "#/$defs/CommercialCurrencyBasisV1"
+    },
+    "commercial_value_cap": {
+      "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$",
+      "title": "Commercial Value Cap",
+      "type": "string"
+    },
+    "commercial_value_floor": {
+      "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$",
+      "title": "Commercial Value Floor",
+      "type": "string"
+    },
+    "export_boundary": {
+      "const": "INERT_RECOMMENDATION_ONLY",
+      "title": "Export Boundary",
+      "type": "string"
+    },
+    "horizon_weeks": {
+      "const": 4,
+      "title": "Horizon Weeks",
+      "type": "integer"
+    },
+    "match_component_weights_bp": {
+      "$ref": "#/$defs/MatchComponentWeightsV1"
+    },
+    "minimum_working_window_overlap": {
+      "maximum": 1440,
+      "minimum": 0,
+      "title": "Minimum Working Window Overlap",
+      "type": "integer"
+    },
+    "priority_weight_bounds": {
+      "$ref": "#/$defs/PriorityWeightBoundsV1"
+    },
+    "priority_weights_bp": {
+      "$ref": "#/$defs/PriorityWeightsV1"
+    },
+    "prohibited_inputs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Prohibited Inputs",
+      "type": "array"
+    },
+    "prohibited_outputs": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Prohibited Outputs",
+      "type": "array"
+    },
+    "readiness_dimensions": {
+      "items": {
+        "enum": [
+          "business-problem",
+          "buyer-outcome",
+          "technical-scope",
+          "stakeholder-role-coverage",
+          "success-criteria",
+          "security-or-data-requirements",
+          "evaluation-plan",
+          "customer-owner-and-next-step",
+          "milestone-date"
+        ],
+        "type": "string"
+      },
+      "title": "Readiness Dimensions",
+      "type": "array"
+    },
+    "required_readiness_subsets_by_request_type": {
+      "additionalProperties": {
+        "items": {
+          "enum": [
+            "business-problem",
+            "buyer-outcome",
+            "technical-scope",
+            "stakeholder-role-coverage",
+            "success-criteria",
+            "security-or-data-requirements",
+            "evaluation-plan",
+            "customer-owner-and-next-step",
+            "milestone-date"
+          ],
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "title": "Required Readiness Subsets By Request Type",
+      "type": "object"
+    },
+    "scenario_boundaries": {
+      "$ref": "#/$defs/ScenarioBoundariesV1"
+    },
+    "schema_version": {
+      "const": "orchestrator.policy.v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "skill_catalog": {
+      "items": {
+        "$ref": "#/$defs/SkillCatalogEntryV1"
+      },
+      "title": "Skill Catalog",
+      "type": "array"
+    },
+    "solver_config": {
+      "$ref": "#/$defs/SolverConfigV1"
+    },
+    "urgency_breakpoints": {
+      "items": {
+        "$ref": "#/$defs/UrgencyBreakpointV1"
+      },
+      "title": "Urgency Breakpoints",
+      "type": "array"
+    },
+    "utilization_ceiling": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Utilization Ceiling",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "horizon_weeks",
+    "readiness_dimensions",
+    "required_readiness_subsets_by_request_type",
+    "priority_weights_bp",
+    "priority_weight_bounds",
+    "urgency_breakpoints",
+    "commercial_value_floor",
+    "commercial_value_cap",
+    "commercial_currency_basis",
+    "skill_catalog",
+    "capacity_unit_minutes",
+    "capacity_completeness_window",
+    "utilization_ceiling",
+    "minimum_working_window_overlap",
+    "match_component_weights_bp",
+    "solver_config",
+    "scenario_boundaries",
+    "prohibited_inputs",
+    "prohibited_outputs",
+    "export_boundary"
+  ],
+  "title": "PolicyV2",
+  "type": "object"
+}

@@ -1,0 +1,1 @@
+{"custom":false,"fields":[{"custom":false,"label":"Record ID","name":"Id","type":"id"},{"custom":false,"label":"Last Modified","name":"LastModifiedDate","type":"datetime"},{"custom":true,"label":"Synthetic Region","name":"Synthetic_Region__c","type":"string"}],"name":"Opportunity"}

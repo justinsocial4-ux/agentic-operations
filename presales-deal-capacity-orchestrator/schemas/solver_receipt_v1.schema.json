@@ -1,0 +1,315 @@
+{
+  "$defs": {
+    "AssignmentChoiceV2": {
+      "additionalProperties": false,
+      "properties": {
+        "consultant_source_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Consultant Source Id",
+          "type": "string"
+        },
+        "deal_source_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Deal Source Id",
+          "type": "string"
+        },
+        "due_week_bucket": {
+          "enum": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "title": "Due Week Bucket",
+          "type": "integer"
+        },
+        "effort_units": {
+          "exclusiveMinimum": 0,
+          "title": "Effort Units",
+          "type": "integer"
+        },
+        "eligibility_receipt_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Eligibility Receipt Id",
+          "type": "string"
+        },
+        "fit_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Fit Bp",
+          "type": "integer"
+        },
+        "fit_receipt_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Fit Receipt Id",
+          "type": "string"
+        },
+        "priority_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Priority Bp",
+          "type": "integer"
+        },
+        "priority_receipt_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Priority Receipt Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "deal_source_id",
+        "consultant_source_id",
+        "priority_receipt_id",
+        "eligibility_receipt_id",
+        "fit_receipt_id",
+        "due_week_bucket",
+        "effort_units",
+        "priority_bp",
+        "fit_bp"
+      ],
+      "title": "AssignmentChoiceV2",
+      "type": "object"
+    },
+    "SolverPhaseReceiptV1": {
+      "additionalProperties": false,
+      "properties": {
+        "objective_value": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Objective Value"
+        },
+        "phase": {
+          "enum": [
+            "MAXIMIZE_SERVICED_PRIORITY",
+            "MAXIMIZE_PORTFOLIO_MATCH",
+            "MINIMIZE_PEAK_UTILIZATION",
+            "STABLE_ID_TIE_BREAK"
+          ],
+          "title": "Phase",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "OPTIMAL",
+            "FEASIBLE",
+            "INFEASIBLE",
+            "MODEL_INVALID",
+            "UNKNOWN",
+            "NO_FEASIBLE_ASSIGNMENT"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "phase",
+        "status"
+      ],
+      "title": "SolverPhaseReceiptV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "assignments": {
+      "items": {
+        "$ref": "#/$defs/AssignmentChoiceV2"
+      },
+      "title": "Assignments",
+      "type": "array"
+    },
+    "constraints_verified": {
+      "title": "Constraints Verified",
+      "type": "boolean"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "engine": {
+      "const": "OR_TOOLS_CP_SAT",
+      "title": "Engine",
+      "type": "string"
+    },
+    "engine_version": {
+      "maxLength": 40,
+      "minLength": 1,
+      "title": "Engine Version",
+      "type": "string"
+    },
+    "forced_pair_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Forced Pair Ids",
+      "type": "array"
+    },
+    "mapping_profile_sha256s": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Mapping Profile Sha256S",
+      "type": "array"
+    },
+    "peak_projected_utilization_bp": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Peak Projected Utilization Bp"
+    },
+    "phase_limit_seconds": {
+      "maximum": 30,
+      "minimum": 1,
+      "title": "Phase Limit Seconds",
+      "type": "integer"
+    },
+    "phases": {
+      "items": {
+        "$ref": "#/$defs/SolverPhaseReceiptV1"
+      },
+      "title": "Phases",
+      "type": "array"
+    },
+    "policy_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Sha256",
+      "type": "string"
+    },
+    "portfolio_match_total": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Portfolio Match Total"
+    },
+    "random_seed": {
+      "minimum": 0,
+      "title": "Random Seed",
+      "type": "integer"
+    },
+    "recommendation_status": {
+      "enum": [
+        "RECOMMENDATION_AVAILABLE",
+        "NO_FEASIBLE_ASSIGNMENT",
+        "SOLVER_FAILURE"
+      ],
+      "title": "Recommendation Status",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.solver-receipt.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "serviced_priority_total": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Serviced Priority Total"
+    },
+    "solver_receipt_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Solver Receipt Id",
+      "type": "string"
+    },
+    "source_manifest_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Manifest Ids",
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "OPTIMAL",
+        "FEASIBLE",
+        "INFEASIBLE",
+        "MODEL_INVALID",
+        "UNKNOWN",
+        "NO_FEASIBLE_ASSIGNMENT"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "worker_count": {
+      "const": 1,
+      "title": "Worker Count",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "run_id",
+    "policy_sha256",
+    "source_manifest_ids",
+    "mapping_profile_sha256s",
+    "schema_version",
+    "solver_receipt_id",
+    "engine",
+    "engine_version",
+    "worker_count",
+    "random_seed",
+    "phase_limit_seconds",
+    "status",
+    "recommendation_status",
+    "phases",
+    "assignments",
+    "forced_pair_ids",
+    "constraints_verified",
+    "created_at"
+  ],
+  "title": "SolverReceiptV1",
+  "type": "object"
+}

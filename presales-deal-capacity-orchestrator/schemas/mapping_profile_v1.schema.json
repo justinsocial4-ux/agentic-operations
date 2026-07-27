@@ -1,0 +1,240 @@
+{
+  "$defs": {
+    "CrosswalkEntryV1": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_value": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Canonical Value",
+          "type": "string"
+        },
+        "source_value": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Source Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_value",
+        "canonical_value"
+      ],
+      "title": "CrosswalkEntryV1",
+      "type": "object"
+    },
+    "MappingRuleV1": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_target_field": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Canonical Target Field",
+          "type": "string"
+        },
+        "conversion_id": {
+          "enum": [
+            "IDENTITY",
+            "TRIM",
+            "ENUM_CROSSWALK",
+            "ISO_TIMESTAMP",
+            "EPOCH_MS_TIMESTAMP",
+            "DECIMAL_CURRENCY",
+            "EFFORT_MINUTES_TO_UNITS",
+            "BOOLEAN",
+            "LIST_SPLIT",
+            "EXACT_ID_CROSSWALK"
+          ],
+          "title": "Conversion Id",
+          "type": "string"
+        },
+        "crosswalk": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CrosswalkEntryV1"
+          },
+          "title": "Crosswalk",
+          "type": "array"
+        },
+        "list_delimiter": {
+          "anyOf": [
+            {
+              "maxLength": 8,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "List Delimiter"
+        },
+        "required": {
+          "title": "Required",
+          "type": "boolean"
+        },
+        "rule_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Rule Id",
+          "type": "string"
+        },
+        "source_field_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "title": "Source Field Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "rule_id",
+        "source_field_id",
+        "canonical_target_field",
+        "conversion_id",
+        "required"
+      ],
+      "title": "MappingRuleV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "accepted_at": {
+      "format": "date-time",
+      "title": "Accepted At",
+      "type": "string"
+    },
+    "adapter_source_format_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Adapter Source Format Id",
+      "type": "string"
+    },
+    "adapter_source_format_version": {
+      "title": "Adapter Source Format Version",
+      "type": "string"
+    },
+    "canonical_profile_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Canonical Profile Sha256",
+      "type": "string"
+    },
+    "currency": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Currency"
+    },
+    "effort_unit": {
+      "anyOf": [
+        {
+          "enum": [
+            "MINUTES",
+            "THIRTY_MINUTE_UNITS"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Effort Unit"
+    },
+    "null_tokens": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Null Tokens",
+      "type": "array"
+    },
+    "object_kind": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Object Kind",
+      "type": "string"
+    },
+    "owner_role": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Owner Role",
+      "type": "string"
+    },
+    "profile_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Profile Id",
+      "type": "string"
+    },
+    "reviewer_role": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Reviewer Role",
+      "type": "string"
+    },
+    "rules": {
+      "items": {
+        "$ref": "#/$defs/MappingRuleV1"
+      },
+      "title": "Rules",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "orchestrator.mapping-profile.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_instance_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Source Instance Id",
+      "type": "string"
+    },
+    "source_population_predicate_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Source Population Predicate Sha256",
+      "type": "string"
+    },
+    "timezone": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Timezone"
+    }
+  },
+  "required": [
+    "schema_version",
+    "profile_id",
+    "adapter_source_format_id",
+    "adapter_source_format_version",
+    "source_instance_id",
+    "object_kind",
+    "rules",
+    "null_tokens",
+    "timezone",
+    "currency",
+    "effort_unit",
+    "source_population_predicate_sha256",
+    "owner_role",
+    "reviewer_role",
+    "accepted_at",
+    "canonical_profile_sha256"
+  ],
+  "title": "MappingProfileV1",
+  "type": "object"
+}

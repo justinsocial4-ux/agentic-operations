@@ -1,0 +1,70 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "completeness_state": {
+      "enum": [
+        "COMPLETE",
+        "INCOMPLETE",
+        "CONFLICT"
+      ],
+      "title": "Completeness State",
+      "type": "string"
+    },
+    "consultant_source_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Consultant Source Id",
+      "type": "string"
+    },
+    "lineage_receipt_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Lineage Receipt Ids",
+      "type": "array"
+    },
+    "scheduled_units": {
+      "minimum": 0,
+      "title": "Scheduled Units",
+      "type": "integer"
+    },
+    "schema_version": {
+      "const": "orchestrator.capacity-availability.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_as_of": {
+      "format": "date-time",
+      "title": "Source As Of",
+      "type": "string"
+    },
+    "time_off_reduction_units": {
+      "minimum": 0,
+      "title": "Time Off Reduction Units",
+      "type": "integer"
+    },
+    "week_bucket": {
+      "maximum": 4,
+      "minimum": 1,
+      "title": "Week Bucket",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "consultant_source_id",
+    "week_bucket",
+    "scheduled_units",
+    "time_off_reduction_units",
+    "source_as_of",
+    "completeness_state",
+    "lineage_receipt_ids"
+  ],
+  "title": "CapacityAvailabilityV1",
+  "type": "object"
+}

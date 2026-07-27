@@ -1,0 +1,12 @@
+{
+  "calls": [
+    {
+      "id": "gong-call-1",
+      "started": "2026-08-03T09:00:00Z",
+      "duration": 2700,
+      "title": "Fictional EU Discovery Call",
+      "unmapped_future_field": "translators ignore non-allowlisted response fields"
+    }
+  ],
+  "records": {"cursor": "gong-cursor-page-2"}
+}

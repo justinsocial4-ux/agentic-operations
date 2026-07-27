@@ -1,0 +1,87 @@
+{
+  "$defs": {
+    "SourceFieldMetadataV1": {
+      "additionalProperties": false,
+      "properties": {
+        "custom": {
+          "title": "Custom",
+          "type": "boolean"
+        },
+        "field_id": {
+          "minLength": 1,
+          "title": "Field Id",
+          "type": "string"
+        },
+        "label": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Label"
+        },
+        "source_type": {
+          "title": "Source Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "field_id",
+        "source_type",
+        "custom"
+      ],
+      "title": "SourceFieldMetadataV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "adapter_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "fields": {
+      "items": {
+        "$ref": "#/$defs/SourceFieldMetadataV1"
+      },
+      "title": "Fields",
+      "type": "array"
+    },
+    "mapping_accepted": {
+      "const": false,
+      "default": false,
+      "title": "Mapping Accepted",
+      "type": "boolean"
+    },
+    "object_kind": {
+      "title": "Object Kind",
+      "type": "string"
+    },
+    "schema_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Schema Sha256",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.source-schema-metadata.v1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "adapter_id",
+    "object_kind",
+    "fields",
+    "schema_sha256"
+  ],
+  "title": "SourceSchemaMetadataV1",
+  "type": "object"
+}

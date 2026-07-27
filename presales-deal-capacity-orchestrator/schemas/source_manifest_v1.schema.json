@@ -1,0 +1,257 @@
+{
+  "$defs": {
+    "DataClassificationV1": {
+      "enum": [
+        "FICTIONAL",
+        "AUTHORIZED_INTERNAL",
+        "AUTHORIZED_PRIVATE_TRANSCRIPT"
+      ],
+      "title": "DataClassificationV1",
+      "type": "string"
+    },
+    "HardBoundsV1": {
+      "additionalProperties": false,
+      "properties": {
+        "max_bytes": {
+          "maximum": 262144000,
+          "minimum": 1,
+          "title": "Max Bytes",
+          "type": "integer"
+        },
+        "max_pages": {
+          "maximum": 100,
+          "minimum": 1,
+          "title": "Max Pages",
+          "type": "integer"
+        },
+        "max_rows": {
+          "maximum": 10000,
+          "minimum": 1,
+          "title": "Max Rows",
+          "type": "integer"
+        },
+        "max_seconds": {
+          "maximum": 600,
+          "minimum": 1,
+          "title": "Max Seconds",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_pages",
+        "max_rows",
+        "max_bytes",
+        "max_seconds"
+      ],
+      "title": "HardBoundsV1",
+      "type": "object"
+    },
+    "SnapshotSemanticsV1": {
+      "enum": [
+        "FULL_SNAPSHOT",
+        "BOUNDED_DELTA",
+        "REPLAY_FIXTURE"
+      ],
+      "title": "SnapshotSemanticsV1",
+      "type": "string"
+    },
+    "SourceAuthorityBindingV1": {
+      "additionalProperties": false,
+      "properties": {
+        "authority_role": {
+          "enum": [
+            "DEALS_PRIMARY",
+            "ROSTER_PRIMARY",
+            "CAPACITY_PRIMARY",
+            "WORKLOAD_PRIMARY",
+            "CONVERSATION_ADDITIVE"
+          ],
+          "title": "Authority Role",
+          "type": "string"
+        },
+        "expected_non_secret_identity_fingerprint": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Non Secret Identity Fingerprint"
+        },
+        "source_slot_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Source Slot Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_slot_id",
+        "authority_role"
+      ],
+      "title": "SourceAuthorityBindingV1",
+      "type": "object"
+    },
+    "SourceModeV1": {
+      "enum": [
+        "FICTIONAL",
+        "FILE_IMPORT",
+        "DIRECT_CONNECTOR",
+        "MOCK_REPLAY"
+      ],
+      "title": "SourceModeV1",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "adapter_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Adapter Id",
+      "type": "string"
+    },
+    "authority_bindings": {
+      "items": {
+        "$ref": "#/$defs/SourceAuthorityBindingV1"
+      },
+      "minItems": 1,
+      "title": "Authority Bindings",
+      "type": "array"
+    },
+    "authorization_attestation_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Authorization Attestation Id",
+      "type": "string"
+    },
+    "data_classification": {
+      "$ref": "#/$defs/DataClassificationV1"
+    },
+    "hard_bounds": {
+      "$ref": "#/$defs/HardBoundsV1"
+    },
+    "mapping_profile_hash": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{64}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Mapping Profile Hash"
+    },
+    "requested_objects": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Requested Objects",
+      "type": "array"
+    },
+    "retention_policy_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Retention Policy Id",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.source-manifest.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "selected_field_ids": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Selected Field Ids",
+      "type": "array"
+    },
+    "snapshot_semantics": {
+      "$ref": "#/$defs/SnapshotSemanticsV1"
+    },
+    "source_instance_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Source Instance Id",
+      "type": "string"
+    },
+    "source_manifest_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Source Manifest Id",
+      "type": "string"
+    },
+    "source_mode": {
+      "$ref": "#/$defs/SourceModeV1"
+    },
+    "synthetic": {
+      "title": "Synthetic",
+      "type": "boolean"
+    },
+    "window_begin": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Window Begin"
+    },
+    "window_end": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Window End"
+    }
+  },
+  "required": [
+    "schema_version",
+    "source_manifest_id",
+    "run_id",
+    "adapter_id",
+    "source_mode",
+    "source_instance_id",
+    "authorization_attestation_id",
+    "data_classification",
+    "snapshot_semantics",
+    "authority_bindings",
+    "requested_objects",
+    "selected_field_ids",
+    "window_begin",
+    "window_end",
+    "hard_bounds",
+    "mapping_profile_hash",
+    "retention_policy_id",
+    "synthetic"
+  ],
+  "title": "SourceManifestV1",
+  "type": "object"
+}

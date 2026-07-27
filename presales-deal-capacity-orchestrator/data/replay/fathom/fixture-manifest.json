@@ -1,0 +1,9 @@
+{
+  "schema_version": "orchestrator.replay-fixture-manifest.v1",
+  "source_family": "FATHOM",
+  "credential_free": true,
+  "vendor_network": false,
+  "contains_real_participant_pii": false,
+  "notes": "Official-shape synthetic fixtures. Emails are fictional (.invalid) and exist only to prove in-memory minimization; they are never persisted.",
+  "files": ["meetings-page.json", "recording-transcript.json"]
+}

@@ -1,0 +1,16 @@
+{
+  "recording_id": "rec-fict-001",
+  "unmapped_future_field": "translators ignore non-allowlisted response fields",
+  "segments": [
+    {
+      "speaker": {"display_name": "Fictional Buyer", "email": "buyer@example.invalid"},
+      "text": "Approval requires EU data residency.",
+      "relative_timestamp_ms": 332000
+    },
+    {
+      "speaker": {"display_name": "Fictional SC", "email": "sc@example.invalid"},
+      "text": "We are really excited and happy to help with the residency requirement.",
+      "relative_timestamp_ms": 339000
+    }
+  ]
+}

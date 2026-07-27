@@ -1,0 +1,176 @@
+{
+  "$defs": {
+    "WeeklyCapacityBucketV1": {
+      "additionalProperties": false,
+      "properties": {
+        "active_workload_units": {
+          "minimum": 0,
+          "title": "Active Workload Units",
+          "type": "integer"
+        },
+        "completeness_state": {
+          "enum": [
+            "COMPLETE",
+            "INCOMPLETE",
+            "CONFLICT"
+          ],
+          "title": "Completeness State",
+          "type": "string"
+        },
+        "free_units": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Free Units"
+        },
+        "scheduled_units": {
+          "minimum": 0,
+          "title": "Scheduled Units",
+          "type": "integer"
+        },
+        "time_off_units": {
+          "minimum": 0,
+          "title": "Time Off Units",
+          "type": "integer"
+        },
+        "week_bucket": {
+          "enum": [
+            1,
+            2,
+            3,
+            4
+          ],
+          "title": "Week Bucket",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "week_bucket",
+        "scheduled_units",
+        "time_off_units",
+        "active_workload_units",
+        "completeness_state"
+      ],
+      "title": "WeeklyCapacityBucketV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "buckets": {
+      "maxItems": 4,
+      "minItems": 4,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/WeeklyCapacityBucketV1"
+        },
+        {
+          "$ref": "#/$defs/WeeklyCapacityBucketV1"
+        },
+        {
+          "$ref": "#/$defs/WeeklyCapacityBucketV1"
+        },
+        {
+          "$ref": "#/$defs/WeeklyCapacityBucketV1"
+        }
+      ],
+      "title": "Buckets",
+      "type": "array"
+    },
+    "capacity_receipt_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Capacity Receipt Id",
+      "type": "string"
+    },
+    "capacity_unit_minutes": {
+      "const": 30,
+      "title": "Capacity Unit Minutes",
+      "type": "integer"
+    },
+    "complete_through_bucket": {
+      "maximum": 4,
+      "minimum": 0,
+      "title": "Complete Through Bucket",
+      "type": "integer"
+    },
+    "consultant_source_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Consultant Source Id",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "horizon_weeks": {
+      "const": 4,
+      "title": "Horizon Weeks",
+      "type": "integer"
+    },
+    "mapping_profile_sha256s": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Mapping Profile Sha256S",
+      "type": "array"
+    },
+    "policy_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Sha256",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.weekly-capacity-receipt.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_manifest_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Manifest Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "policy_sha256",
+    "source_manifest_ids",
+    "mapping_profile_sha256s",
+    "schema_version",
+    "capacity_receipt_id",
+    "consultant_source_id",
+    "capacity_unit_minutes",
+    "horizon_weeks",
+    "buckets",
+    "complete_through_bucket",
+    "created_at"
+  ],
+  "title": "WeeklyCapacityReceiptV1",
+  "type": "object"
+}

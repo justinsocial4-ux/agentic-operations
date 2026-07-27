@@ -1,0 +1,126 @@
+{
+  "accepted_at": "2026-08-01T12:00:00Z",
+  "adapter_source_format_id": "csv-operational-v1",
+  "adapter_source_format_version": "1",
+  "canonical_profile_sha256": "ae9da497071646cee054e2010da5faa3e2bfc8a8a43734aa0268fc3c10caceb8",
+  "currency": "USD",
+  "effort_unit": null,
+  "null_tokens": [
+    "",
+    "NULL"
+  ],
+  "object_kind": "DEAL_WORK_REQUEST",
+  "owner_role": "data-owner",
+  "profile_id": "profile-example-deal-priority-v1",
+  "reviewer_role": "manager",
+  "rules": [
+    {
+      "canonical_target_field": "work_request_id",
+      "conversion_id": "IDENTITY",
+      "crosswalk": [],
+      "list_delimiter": null,
+      "required": true,
+      "rule_id": "rule-work-request-id",
+      "source_field_id": "work_id"
+    },
+    {
+      "canonical_target_field": "deal_source_id",
+      "conversion_id": "EXACT_ID_CROSSWALK",
+      "crosswalk": [
+        {
+          "canonical_value": "urn:orchestrator:csv-operational-v1:src-example-deal-csv:DEAL:deal-1",
+          "source_value": "deal-1"
+        }
+      ],
+      "list_delimiter": null,
+      "required": true,
+      "rule_id": "rule-deal-source-id",
+      "source_field_id": "deal_id"
+    },
+    {
+      "canonical_target_field": "request_type",
+      "conversion_id": "IDENTITY",
+      "crosswalk": [],
+      "list_delimiter": null,
+      "required": true,
+      "rule_id": "rule-request-type",
+      "source_field_id": "request_type"
+    },
+    {
+      "canonical_target_field": "milestone_type",
+      "conversion_id": "IDENTITY",
+      "crosswalk": [],
+      "list_delimiter": null,
+      "required": true,
+      "rule_id": "rule-milestone-type",
+      "source_field_id": "milestone_type"
+    },
+    {
+      "canonical_target_field": "milestone_due_time",
+      "conversion_id": "ISO_TIMESTAMP",
+      "crosswalk": [],
+      "list_delimiter": null,
+      "required": true,
+      "rule_id": "rule-milestone-due-time",
+      "source_field_id": "due_at"
+    },
+    {
+      "canonical_target_field": "commercial_amount",
+      "conversion_id": "DECIMAL_CURRENCY",
+      "crosswalk": [],
+      "list_delimiter": null,
+      "required": true,
+      "rule_id": "rule-commercial-amount",
+      "source_field_id": "amount"
+    },
+    {
+      "canonical_target_field": "commercial_currency",
+      "conversion_id": "IDENTITY",
+      "crosswalk": [],
+      "list_delimiter": null,
+      "required": true,
+      "rule_id": "rule-commercial-currency",
+      "source_field_id": "currency"
+    },
+    {
+      "canonical_target_field": "commercial_basis",
+      "conversion_id": "IDENTITY",
+      "crosswalk": [],
+      "list_delimiter": null,
+      "required": true,
+      "rule_id": "rule-commercial-basis",
+      "source_field_id": "basis"
+    },
+    {
+      "canonical_target_field": "structured_evidence_references",
+      "conversion_id": "LIST_SPLIT",
+      "crosswalk": [],
+      "list_delimiter": ";",
+      "required": true,
+      "rule_id": "rule-structured-evidence-references",
+      "source_field_id": "evidence_refs"
+    },
+    {
+      "canonical_target_field": "source_freshness",
+      "conversion_id": "ISO_TIMESTAMP",
+      "crosswalk": [],
+      "list_delimiter": null,
+      "required": true,
+      "rule_id": "rule-source-freshness",
+      "source_field_id": "fresh_at"
+    },
+    {
+      "canonical_target_field": "lineage_receipt_ids",
+      "conversion_id": "LIST_SPLIT",
+      "crosswalk": [],
+      "list_delimiter": ";",
+      "required": true,
+      "rule_id": "rule-lineage-receipt-ids",
+      "source_field_id": "lineage_refs"
+    }
+  ],
+  "schema_version": "orchestrator.mapping-profile.v1",
+  "source_instance_id": "src-example-deal-csv",
+  "source_population_predicate_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "timezone": "UTC"
+}

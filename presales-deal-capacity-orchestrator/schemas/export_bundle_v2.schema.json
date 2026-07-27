@@ -1,0 +1,148 @@
+{
+  "$defs": {
+    "ExecutionModeV1": {
+      "enum": [
+        "FICTIONAL_REPLAY",
+        "FILE_IMPORT",
+        "DIRECT_CONNECTOR_ENABLED",
+        "DIRECT_CONNECTOR_DISABLED"
+      ],
+      "title": "ExecutionModeV1",
+      "type": "string"
+    },
+    "ImplementationProofV1": {
+      "enum": [
+        "FULLY_IMPLEMENTED_CONTRACT_TESTED",
+        "MOCK_TESTED_ONLY",
+        "ADAPTER_INTERFACE_ONLY"
+      ],
+      "title": "ImplementationProofV1",
+      "type": "string"
+    },
+    "LiveValidationProofV1": {
+      "enum": [
+        "NOT_LIVE_VALIDATED",
+        "LIVE_SANDBOX_VALIDATED"
+      ],
+      "title": "LiveValidationProofV1",
+      "type": "string"
+    },
+    "RunProofSummaryV1": {
+      "additionalProperties": false,
+      "properties": {
+        "derivation": {
+          "const": "WEAKEST_DECISION_BEARING_SOURCE",
+          "title": "Derivation",
+          "type": "string"
+        },
+        "implementation_proof": {
+          "$ref": "#/$defs/ImplementationProofV1"
+        },
+        "live_validation_proof": {
+          "$ref": "#/$defs/LiveValidationProofV1"
+        }
+      },
+      "required": [
+        "implementation_proof",
+        "live_validation_proof",
+        "derivation"
+      ],
+      "title": "RunProofSummaryV1",
+      "type": "object"
+    },
+    "SerializedSourceProofV1": {
+      "additionalProperties": false,
+      "properties": {
+        "decision_bearing": {
+          "title": "Decision Bearing",
+          "type": "boolean"
+        },
+        "execution_mode": {
+          "$ref": "#/$defs/ExecutionModeV1"
+        },
+        "implementation_proof": {
+          "$ref": "#/$defs/ImplementationProofV1"
+        },
+        "live_validation_proof": {
+          "$ref": "#/$defs/LiveValidationProofV1"
+        }
+      },
+      "required": [
+        "execution_mode",
+        "implementation_proof",
+        "live_validation_proof",
+        "decision_bearing"
+      ],
+      "title": "SerializedSourceProofV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "artifact_id": {
+      "minLength": 1,
+      "title": "Artifact Id",
+      "type": "string"
+    },
+    "assignment_status": {
+      "const": "RECOMMENDATION_ONLY",
+      "title": "Assignment Status",
+      "type": "string"
+    },
+    "execution_authorized": {
+      "const": false,
+      "title": "Execution Authorized",
+      "type": "boolean"
+    },
+    "external_writes_attempted": {
+      "const": false,
+      "title": "External Writes Attempted",
+      "type": "boolean"
+    },
+    "payload_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Payload Sha256",
+      "type": "string"
+    },
+    "production_ready": {
+      "const": false,
+      "title": "Production Ready",
+      "type": "boolean"
+    },
+    "run_proof_summary": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RunProofSummaryV1"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "schema_version": {
+      "const": "orchestrator.export-bundle.v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_proof_by_instance": {
+      "additionalProperties": {
+        "$ref": "#/$defs/SerializedSourceProofV1"
+      },
+      "title": "Source Proof By Instance",
+      "type": "object"
+    }
+  },
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "source_proof_by_instance",
+    "run_proof_summary",
+    "payload_sha256",
+    "execution_authorized",
+    "external_writes_attempted",
+    "assignment_status",
+    "production_ready"
+  ],
+  "title": "ExportBundleV2",
+  "type": "object"
+}

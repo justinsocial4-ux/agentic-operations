@@ -1,0 +1,14 @@
+[
+  {
+    "conversation_id": "conv-fictional-1",
+    "deal_source_id": "deal-fictional-1",
+    "segment_id": "seg-fictional-1",
+    "speaker_ref": "CUSTOMER",
+    "occurred_at": "2026-08-03T09:12:00Z",
+    "relative_begin_ms": 332000,
+    "relative_end_ms": 339000,
+    "text": "Fictional approval requires EU data residency; the fictional team sounded delighted.",
+    "source_record_id": "source-fictional-1",
+    "lineage_receipt_id": "lineage-fictional-1"
+  }
+]

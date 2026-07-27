@@ -1,0 +1,99 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "cited_excerpt_ids": {
+      "default": [],
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "title": "Cited Excerpt Ids",
+      "type": "array"
+    },
+    "conversation_origin_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Conversation Origin Id",
+      "type": "string"
+    },
+    "deal_source_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Deal Source Id",
+      "type": "string"
+    },
+    "ended_at": {
+      "format": "date-time",
+      "title": "Ended At",
+      "type": "string"
+    },
+    "native_call_or_meeting_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Native Call Or Meeting Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.conversation-evidence-metadata.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_family": {
+      "enum": [
+        "FILE_IMPORT",
+        "FATHOM",
+        "GONG"
+      ],
+      "title": "Source Family",
+      "type": "string"
+    },
+    "speaker_role_counts": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "type": "integer"
+          },
+          "propertyNames": {
+            "enum": [
+              "CUSTOMER",
+              "INTERNAL",
+              "UNKNOWN"
+            ]
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Speaker Role Counts"
+    },
+    "started_at": {
+      "format": "date-time",
+      "title": "Started At",
+      "type": "string"
+    },
+    "transcript_content_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Transcript Content Sha256",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "conversation_origin_id",
+    "source_family",
+    "native_call_or_meeting_id",
+    "deal_source_id",
+    "transcript_content_sha256",
+    "started_at",
+    "ended_at"
+  ],
+  "title": "ConversationEvidenceMetadataV1",
+  "type": "object"
+}

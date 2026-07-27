@@ -1,0 +1,23 @@
+# Phase 7 loopback-only UI hardening.
+# The review dashboard runs locally only and never transmits usage data or
+# source payloads anywhere. This enforces the plan's loopback-only + no-remote
+# posture for the Streamlit UI (plan section 5.1 / 14.1 / 22.4).
+
+[browser]
+gatherUsageStats = false
+
+[server]
+address = "127.0.0.1"
+headless = true
+enableCORS = true
+enableXsrfProtection = true
+
+[global]
+developmentMode = false
+
+# Theme: no forced `base` is set, so Streamlit follows the user's system/browser
+# preference and provides a coherent NATIVE light/dark theme (Main menu →
+# Settings → Theme). The custom Phase 7 polish (cards/badges/typography in
+# ui/theme.py) uses Streamlit's runtime CSS variables and adapts to BOTH native
+# themes — so dark mode is coherent (no more dark-page/light-widget clash).
+# Loopback + telemetry-off posture above is unchanged.

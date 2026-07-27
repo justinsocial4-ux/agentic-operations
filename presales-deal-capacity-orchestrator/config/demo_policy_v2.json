@@ -1,0 +1,37 @@
+{
+  "schema_version": "orchestrator.policy.v2",
+  "horizon_weeks": 4,
+  "readiness_dimensions": ["business-problem", "buyer-outcome", "technical-scope", "stakeholder-role-coverage", "success-criteria", "security-or-data-requirements", "evaluation-plan", "customer-owner-and-next-step", "milestone-date"],
+  "required_readiness_subsets_by_request_type": {
+    "DEMO_REQUEST": ["business-problem", "buyer-outcome", "technical-scope", "success-criteria", "customer-owner-and-next-step", "milestone-date"]
+  },
+  "priority_weights_bp": {"milestone_urgency": 4500, "readiness_evidence": 3000, "commercial_value": 2500},
+  "priority_weight_bounds": {
+    "milestone_urgency": {"minimum_bp": 3500, "maximum_bp": 5500},
+    "readiness_evidence": {"minimum_bp": 2000, "maximum_bp": 4000},
+    "commercial_value": {"minimum_bp": 1000, "maximum_bp": 3000}
+  },
+  "urgency_breakpoints": [
+    {"latest_days_until_due": 7, "feature_bp": 10000},
+    {"latest_days_until_due": 14, "feature_bp": 7500},
+    {"latest_days_until_due": 21, "feature_bp": 5000},
+    {"latest_days_until_due": 28, "feature_bp": 2500}
+  ],
+  "commercial_value_floor": "10000.00",
+  "commercial_value_cap": "500000.00",
+  "commercial_currency_basis": {"currency": "USD", "basis_id": "demo-corporate-bookings-v1"},
+  "skill_catalog": [
+    {"skill_id": "security", "label": "Security", "minimum_level": 2},
+    {"skill_id": "integration", "label": "Integration", "minimum_level": 2}
+  ],
+  "capacity_unit_minutes": 30,
+  "capacity_completeness_window": "FOUR_WEEK_HORIZON",
+  "utilization_ceiling": 8500,
+  "minimum_working_window_overlap": 120,
+  "match_component_weights_bp": {"skill_surplus": 5000, "continuity": 2500, "overlap_surplus": 1000, "capacity_headroom": 1500},
+  "solver_config": {"worker_count": 1, "random_seed": 1729, "phase_limit_seconds": 5, "release_requires_optimal": true},
+  "scenario_boundaries": {"region_id": "EMEA", "effort_multiplier": "1.25", "rounding": "CEILING_TO_CAPACITY_UNIT"},
+  "prohibited_inputs": ["individual_win_rate", "protected_traits", "transcript_text_for_consultant_fit", "transcript_derived_manager_tags"],
+  "prohibited_outputs": ["automatic_assignment", "employment_decision", "source_system_write", "sentiment_or_performance_inference"],
+  "export_boundary": "INERT_RECOMMENDATION_ONLY"
+}

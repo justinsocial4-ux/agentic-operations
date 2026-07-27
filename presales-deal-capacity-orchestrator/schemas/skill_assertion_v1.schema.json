@@ -1,0 +1,72 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "consultant_source_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Consultant Source Id",
+      "type": "string"
+    },
+    "effective_begin": {
+      "format": "date-time",
+      "title": "Effective Begin",
+      "type": "string"
+    },
+    "effective_end": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Effective End"
+    },
+    "level": {
+      "maximum": 4,
+      "minimum": 0,
+      "title": "Level",
+      "type": "integer"
+    },
+    "policy_owner": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Policy Owner",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.skill-assertion.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "skill_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Skill Id",
+      "type": "string"
+    },
+    "source_receipt_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Source Receipt Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "consultant_source_id",
+    "skill_id",
+    "level",
+    "policy_owner",
+    "effective_begin",
+    "source_receipt_id"
+  ],
+  "title": "SkillAssertionV1",
+  "type": "object"
+}

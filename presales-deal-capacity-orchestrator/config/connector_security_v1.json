@@ -1,0 +1,73 @@
+{
+  "schema_version": "orchestrator.connector-security.v1",
+  "production_readiness": "NOT_ASSESSED",
+  "ambient_security": {
+    "httpx_trust_env": false,
+    "follow_redirects": false,
+    "tls_verification": true,
+    "ambient_cookies": false,
+    "ambient_auth_headers": false,
+    "netrc": false,
+    "proxy_environment": false
+  },
+  "local_model": {
+    "loopback_only": true,
+    "remote_routes": [],
+    "redirects": "DENY"
+  },
+  "vendor_endpoint_allowlist": {
+    "salesforce": {
+      "host_policy": "EXACT_PREFLIGHT_CONFIRMED_TENANT_UNDER_APPROVED_SUFFIX",
+      "approved_suffixes": [".my.salesforce.com", ".salesforce.com"],
+      "methods": ["GET"],
+      "path_templates": ["/services/data/{version}/query", "/services/data/{version}/sobjects/{object}/describe", "/services/data/{version}/sobjects/{object}/updated", "/services/data/{version}/sobjects/{object}/deleted", "/services/data/{version}/limits"]
+    },
+    "clickup": {
+      "hosts": ["api.clickup.com"],
+      "methods": ["GET"],
+      "path_prefix": "/api/v2/"
+    },
+    "fathom": {
+      "hosts": ["api.fathom.ai"],
+      "methods": ["GET"],
+      "path_templates": ["/external/v1/meetings", "/external/v1/recordings/{recording_id}/transcript"],
+      "forbidden_query_keys": ["destination_url"]
+    }
+  },
+  "gong_capability": {
+    "schema_version": "orchestrator.adapter-capability.v1",
+    "adapter_id": "gong-api-v2",
+    "package_version": "0.0.1",
+    "source_api_family": "Gong API",
+    "source_api_version": "V2",
+    "source_kinds": ["CONVERSATION"],
+    "object_kinds": ["CALL", "EXTENSIVE_CALL", "TRANSCRIPT", "USER"],
+    "permitted_authentication_modes": ["SESSION_BASIC", "SESSION_PASTED_BEARER"],
+    "operations": [
+      {"operation_id": "listCalls", "method": "GET", "host": "api.gong.io", "path_template": "/v2/calls", "read_by_post": false, "idempotent_retryable": true, "body_bounds": null},
+      {"operation_id": "listCallsExtensive", "method": "POST", "host": "api.gong.io", "path_template": "/v2/calls/extensive", "read_by_post": true, "idempotent_retryable": true, "body_bounds": {"allowed_keys": ["filter", "contentSelector", "cursor"], "forbidden_keys": ["url", "callback", "callback_url", "destination_url", "webhook"], "max_ids": 100, "max_body_bytes": 65536, "max_date_window_days": 30}},
+      {"operation_id": "getCallTranscripts", "method": "POST", "host": "api.gong.io", "path_template": "/v2/calls/transcript", "read_by_post": true, "idempotent_retryable": true, "body_bounds": {"allowed_keys": ["filter", "cursor"], "forbidden_keys": ["url", "callback", "callback_url", "destination_url", "webhook"], "max_ids": 100, "max_body_bytes": 65536, "max_date_window_days": 30}},
+      {"operation_id": "listUsers", "method": "GET", "host": "api.gong.io", "path_template": "/v2/users", "read_by_post": false, "idempotent_retryable": true, "body_bounds": null}
+    ],
+    "official_artifact": {
+      "retrieval_url": "https://gong.app.gong.io/ajax/settings/api/documentation/specs?version=",
+      "retrieved_at": "2026-07-24",
+      "version_parameter": "",
+      "openapi_version": "3.0.1",
+      "api_version": "V2",
+      "sha256": "4583f7a19d8f8328e6eb8d85829e1632eda335a9010c0d2f09d9dedeb07b6bd6",
+      "artifact_path": "data/replay/gong/official-openapi-v2.json",
+      "artifact_declared_servers": ["https://127.0.0.1:8443"],
+      "rejected_declared_servers": ["https://127.0.0.1:8443"],
+      "approved_host_set": ["api.gong.io"],
+      "approved_host_set_sha256": "08d795d7f4d9d1f888caeb437847e09324414003953c6b9d135b87f478224293",
+      "operation_ids_sha256": "189c47344a27684c880d77d7fc4a24d94a646e79f0e02ee4b02d7953aed18b5c",
+      "manual_review_status": "APPROVED_WITH_REJECTED_GENERATED_SERVERS"
+    },
+    "supported_cursor_semantics": ["OPAQUE_SOURCE_SCOPED"],
+    "schema_discovery_supported": false,
+    "transcript_available": true,
+    "external_writes_supported": false,
+    "write_operation_ids": []
+  }
+}

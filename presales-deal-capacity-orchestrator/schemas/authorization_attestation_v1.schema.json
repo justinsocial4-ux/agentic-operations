@@ -1,0 +1,99 @@
+{
+  "$defs": {
+    "DataClassificationV1": {
+      "enum": [
+        "FICTIONAL",
+        "AUTHORIZED_INTERNAL",
+        "AUTHORIZED_PRIVATE_TRANSCRIPT"
+      ],
+      "title": "DataClassificationV1",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "actor_role": {
+      "maxLength": 80,
+      "minLength": 1,
+      "title": "Actor Role",
+      "type": "string"
+    },
+    "attestation_text_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Attestation Text Sha256",
+      "type": "string"
+    },
+    "attestation_text_version": {
+      "const": "presales-authority-v1",
+      "title": "Attestation Text Version",
+      "type": "string"
+    },
+    "attested_at": {
+      "format": "date-time",
+      "title": "Attested At",
+      "type": "string"
+    },
+    "authorization_attestation_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Authorization Attestation Id",
+      "type": "string"
+    },
+    "authorized_bounds_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Authorized Bounds Sha256",
+      "type": "string"
+    },
+    "data_classification": {
+      "$ref": "#/$defs/DataClassificationV1"
+    },
+    "retention_policy_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Retention Policy Id",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.authorization-attestation.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_types": {
+      "items": {
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Types",
+      "type": "array"
+    },
+    "transcript_warning_acknowledged": {
+      "title": "Transcript Warning Acknowledged",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "schema_version",
+    "authorization_attestation_id",
+    "run_id",
+    "attestation_text_version",
+    "attestation_text_sha256",
+    "source_types",
+    "data_classification",
+    "authorized_bounds_sha256",
+    "retention_policy_id",
+    "actor_role",
+    "attested_at",
+    "transcript_warning_acknowledged"
+  ],
+  "title": "AuthorizationAttestationV1",
+  "type": "object"
+}

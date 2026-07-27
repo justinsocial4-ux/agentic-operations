@@ -1,0 +1,51 @@
+# Continuous integration for a clean, credential-free checkout.
+#
+# Runs the full offline test suite plus the packaging scans on a fresh clone.
+# The fictional and import paths need no network, no credentials, and no private
+# data. Connector tests use httpx.MockTransport with fake credentials and
+# checked-in replay fixtures — no vendor network is ever contacted.
+#
+# NOTE: This workflow is authored for a future public repository. It has not
+# been pushed to or triggered against any remote as part of this build.
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: offline tests + package scans
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out (clean)
+        uses: actions/checkout@v4
+
+      - name: Install uv (pinned)
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: false
+
+      - name: Sync dependencies from the frozen lock
+        run: uv sync --frozen
+
+      - name: Run the full offline test suite
+        run: uv run --frozen pytest -q
+
+      - name: Secret / private-data scan
+        run: uv run --frozen python scripts/secret_private_scan.py
+
+      - name: No-write connector/product surface scan
+        run: uv run --frozen python scripts/no_write_scan.py
+
+      - name: Release verification (manifest, hashes, license inventory)
+        run: uv run --frozen python scripts/verify_release.py
+
+      - name: Public-doc terminology / claim scan
+        run: uv run --frozen python scripts/public_doc_terminology_scan.py

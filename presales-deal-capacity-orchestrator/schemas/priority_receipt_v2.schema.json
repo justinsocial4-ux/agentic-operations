@@ -1,0 +1,200 @@
+{
+  "$defs": {
+    "PriorityFeatureV2": {
+      "additionalProperties": false,
+      "properties": {
+        "feature_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Feature Bp",
+          "type": "integer"
+        },
+        "feature_id": {
+          "enum": [
+            "MILESTONE_URGENCY",
+            "READINESS_EVIDENCE",
+            "COMMERCIAL_VALUE"
+          ],
+          "title": "Feature Id",
+          "type": "string"
+        },
+        "weight_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Weight Bp",
+          "type": "integer"
+        },
+        "weighted_numerator": {
+          "maximum": 100000000,
+          "minimum": 0,
+          "title": "Weighted Numerator",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "feature_id",
+        "feature_bp",
+        "weight_bp",
+        "weighted_numerator"
+      ],
+      "title": "PriorityFeatureV2",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "commercial_amount_used": {
+      "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]+)?$",
+      "title": "Commercial Amount Used",
+      "type": "string"
+    },
+    "commercial_basis_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Commercial Basis Id",
+      "type": "string"
+    },
+    "commercial_currency": {
+      "pattern": "^[A-Z]{3}$",
+      "title": "Commercial Currency",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "deal_source_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Deal Source Id",
+      "type": "string"
+    },
+    "due_week_bucket": {
+      "enum": [
+        1,
+        2,
+        3,
+        4
+      ],
+      "title": "Due Week Bucket",
+      "type": "integer"
+    },
+    "features": {
+      "maxItems": 3,
+      "minItems": 3,
+      "prefixItems": [
+        {
+          "$ref": "#/$defs/PriorityFeatureV2"
+        },
+        {
+          "$ref": "#/$defs/PriorityFeatureV2"
+        },
+        {
+          "$ref": "#/$defs/PriorityFeatureV2"
+        }
+      ],
+      "title": "Features",
+      "type": "array"
+    },
+    "mapping_profile_sha256s": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Mapping Profile Sha256S",
+      "type": "array"
+    },
+    "normalization_approval_receipt_id": {
+      "anyOf": [
+        {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Normalization Approval Receipt Id"
+    },
+    "policy_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Sha256",
+      "type": "string"
+    },
+    "priority_bp": {
+      "maximum": 10000,
+      "minimum": 0,
+      "title": "Priority Bp",
+      "type": "integer"
+    },
+    "priority_receipt_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Priority Receipt Id",
+      "type": "string"
+    },
+    "readiness_receipt_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Readiness Receipt Id",
+      "type": "string"
+    },
+    "rounding": {
+      "const": "ROUND_HALF_EVEN",
+      "title": "Rounding",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.priority-receipt.v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_manifest_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Manifest Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "policy_sha256",
+    "source_manifest_ids",
+    "mapping_profile_sha256s",
+    "schema_version",
+    "priority_receipt_id",
+    "deal_source_id",
+    "readiness_receipt_id",
+    "due_week_bucket",
+    "commercial_amount_used",
+    "commercial_currency",
+    "commercial_basis_id",
+    "features",
+    "priority_bp",
+    "rounding",
+    "created_at"
+  ],
+  "title": "PriorityReceiptV2",
+  "type": "object"
+}

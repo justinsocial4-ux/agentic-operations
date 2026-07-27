@@ -1,0 +1,438 @@
+{
+  "$defs": {
+    "AlternativeCandidateV2": {
+      "additionalProperties": false,
+      "properties": {
+        "consultant_source_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Consultant Source Id",
+          "type": "string"
+        },
+        "counterfactual_status": {
+          "anyOf": [
+            {
+              "enum": [
+                "OPTIMAL",
+                "FEASIBLE",
+                "INFEASIBLE",
+                "MODEL_INVALID",
+                "UNKNOWN",
+                "NO_FEASIBLE_ASSIGNMENT"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Counterfactual Status"
+        },
+        "disposition": {
+          "enum": [
+            "REJECTED_ELIGIBLE",
+            "INELIGIBLE",
+            "EQUIVALENT_OPTIMUM"
+          ],
+          "title": "Disposition",
+          "type": "string"
+        },
+        "hard_constraint_proof": {
+          "$ref": "#/$defs/HardConstraintProofV1"
+        },
+        "match_contributions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MatchContributionProofV1"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "peak_utilization_delta_bp": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Peak Utilization Delta Bp"
+        },
+        "portfolio_match_delta": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Portfolio Match Delta"
+        },
+        "serviced_priority_delta": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Serviced Priority Delta"
+        }
+      },
+      "required": [
+        "consultant_source_id",
+        "disposition",
+        "hard_constraint_proof"
+      ],
+      "title": "AlternativeCandidateV2",
+      "type": "object"
+    },
+    "DealAlternativesV2": {
+      "additionalProperties": false,
+      "properties": {
+        "deal_source_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Deal Source Id",
+          "type": "string"
+        },
+        "ineligible_alternatives": {
+          "items": {
+            "$ref": "#/$defs/AlternativeCandidateV2"
+          },
+          "title": "Ineligible Alternatives",
+          "type": "array"
+        },
+        "recommended_consultant_source_id": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Recommended Consultant Source Id"
+        },
+        "recommended_hard_constraint_proof": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HardConstraintProofV1"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "recommended_match_contributions": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MatchContributionProofV1"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "rejected_eligible_alternatives": {
+          "items": {
+            "$ref": "#/$defs/AlternativeCandidateV2"
+          },
+          "maxItems": 2,
+          "title": "Rejected Eligible Alternatives",
+          "type": "array"
+        }
+      },
+      "required": [
+        "deal_source_id",
+        "rejected_eligible_alternatives",
+        "ineligible_alternatives"
+      ],
+      "title": "DealAlternativesV2",
+      "type": "object"
+    },
+    "EligibilityCheckV2": {
+      "additionalProperties": false,
+      "properties": {
+        "check_id": {
+          "enum": [
+            "DEAL_LANE",
+            "ACTIVE_STATUS",
+            "REGION",
+            "SKILLS",
+            "LANGUAGE",
+            "TIME_ZONE",
+            "WORKING_WINDOW",
+            "CAPACITY_COMPLETE",
+            "CUMULATIVE_CAPACITY",
+            "UTILIZATION",
+            "FROZEN_RECEIPTS"
+          ],
+          "title": "Check Id",
+          "type": "string"
+        },
+        "passed": {
+          "title": "Passed",
+          "type": "boolean"
+        },
+        "reason_code": {
+          "anyOf": [
+            {
+              "maxLength": 256,
+              "minLength": 1,
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Reason Code"
+        }
+      },
+      "required": [
+        "check_id",
+        "passed"
+      ],
+      "title": "EligibilityCheckV2",
+      "type": "object"
+    },
+    "HardConstraintProofV1": {
+      "additionalProperties": false,
+      "properties": {
+        "checks": {
+          "items": {
+            "$ref": "#/$defs/EligibilityCheckV2"
+          },
+          "title": "Checks",
+          "type": "array"
+        },
+        "eligibility_receipt_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Eligibility Receipt Id",
+          "type": "string"
+        },
+        "eligible": {
+          "title": "Eligible",
+          "type": "boolean"
+        },
+        "reason_codes": {
+          "items": {
+            "maxLength": 256,
+            "minLength": 1,
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+            "type": "string"
+          },
+          "title": "Reason Codes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "eligibility_receipt_id",
+        "eligible",
+        "checks",
+        "reason_codes"
+      ],
+      "title": "HardConstraintProofV1",
+      "type": "object"
+    },
+    "MatchComponentV2": {
+      "additionalProperties": false,
+      "properties": {
+        "component_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Component Bp",
+          "type": "integer"
+        },
+        "component_id": {
+          "enum": [
+            "SKILL_SURPLUS",
+            "CONTINUITY",
+            "OVERLAP_SURPLUS",
+            "CAPACITY_HEADROOM"
+          ],
+          "title": "Component Id",
+          "type": "string"
+        },
+        "weight_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Weight Bp",
+          "type": "integer"
+        },
+        "weighted_numerator": {
+          "maximum": 100000000,
+          "minimum": 0,
+          "title": "Weighted Numerator",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "component_id",
+        "component_bp",
+        "weight_bp",
+        "weighted_numerator"
+      ],
+      "title": "MatchComponentV2",
+      "type": "object"
+    },
+    "MatchContributionProofV1": {
+      "additionalProperties": false,
+      "properties": {
+        "components": {
+          "items": {
+            "$ref": "#/$defs/MatchComponentV2"
+          },
+          "title": "Components",
+          "type": "array"
+        },
+        "fit_bp": {
+          "maximum": 10000,
+          "minimum": 0,
+          "title": "Fit Bp",
+          "type": "integer"
+        },
+        "fit_receipt_id": {
+          "maxLength": 256,
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+          "title": "Fit Receipt Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "fit_receipt_id",
+        "fit_bp",
+        "components"
+      ],
+      "title": "MatchContributionProofV1",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "assignment_status": {
+      "const": "RECOMMENDATION_ONLY",
+      "title": "Assignment Status",
+      "type": "string"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "deals": {
+      "items": {
+        "$ref": "#/$defs/DealAlternativesV2"
+      },
+      "title": "Deals",
+      "type": "array"
+    },
+    "external_writes_attempted": {
+      "const": false,
+      "title": "External Writes Attempted",
+      "type": "boolean"
+    },
+    "mapping_profile_sha256s": {
+      "items": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Mapping Profile Sha256S",
+      "type": "array"
+    },
+    "policy_sha256": {
+      "pattern": "^[0-9a-f]{64}$",
+      "title": "Policy Sha256",
+      "type": "string"
+    },
+    "recommendation_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Recommendation Id",
+      "type": "string"
+    },
+    "run_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Run Id",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "orchestrator.assignment-recommendation.v2",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "solver_receipt_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Solver Receipt Id",
+      "type": "string"
+    },
+    "solver_status": {
+      "enum": [
+        "OPTIMAL",
+        "FEASIBLE",
+        "INFEASIBLE",
+        "MODEL_INVALID",
+        "UNKNOWN",
+        "NO_FEASIBLE_ASSIGNMENT"
+      ],
+      "title": "Solver Status",
+      "type": "string"
+    },
+    "source_manifest_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Source Manifest Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "run_id",
+    "policy_sha256",
+    "source_manifest_ids",
+    "mapping_profile_sha256s",
+    "schema_version",
+    "recommendation_id",
+    "solver_receipt_id",
+    "assignment_status",
+    "solver_status",
+    "deals",
+    "external_writes_attempted",
+    "created_at"
+  ],
+  "title": "AssignmentRecommendationV2",
+  "type": "object"
+}

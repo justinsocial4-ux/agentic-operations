@@ -1,0 +1,23 @@
+{
+  "schema_version": "orchestrator.fictional-dataset-manifest.v2",
+  "dataset_id": "fictional-presales-v2",
+  "status": "FROZEN_PHASE_0_TARGET",
+  "synthetic": true,
+  "horizon_weeks": 4,
+  "capacity_unit_minutes": 30,
+  "planned_counts": {"consultants": 36, "deal_requests": 24, "conversation_segments": 48, "skills": 8, "regions": 3},
+  "required_scenarios": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"],
+  "constraints": {
+    "neutral_fictional_ids_only": true,
+    "no_credentials": true,
+    "no_private_data": true,
+    "no_real_names_or_domains": true,
+    "at_least_assignment_eligible": 16,
+    "inspection_count": 2,
+    "no_eligible_count": 1,
+    "equivalent_optimum": true,
+    "global_beats_greedy": true,
+    "emea_scenario_hours": {"base_demand": 24, "scenario_demand": 30, "supply": 28}
+  },
+  "implementation_note": "Phase 0 freezes this target manifest only. Dataset records are built in their named later phases."
+}

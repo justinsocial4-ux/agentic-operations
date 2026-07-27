@@ -1,0 +1,5 @@
+{
+  "schema_version": "orchestrator.accepted-live-receipts.v1",
+  "receipts": [],
+  "note": "No connector is live validated in Phase 0. A runtime success cannot populate this registry."
+}

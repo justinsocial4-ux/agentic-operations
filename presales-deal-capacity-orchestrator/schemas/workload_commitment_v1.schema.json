@@ -1,0 +1,70 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "committed_units": {
+      "minimum": 0,
+      "title": "Committed Units",
+      "type": "integer"
+    },
+    "consultant_source_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Consultant Source Id",
+      "type": "string"
+    },
+    "due_time": {
+      "format": "date-time",
+      "title": "Due Time",
+      "type": "string"
+    },
+    "lineage_receipt_ids": {
+      "items": {
+        "maxLength": 256,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Lineage Receipt Ids",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "orchestrator.workload-commitment.v1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "source_work_id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Source Work Id",
+      "type": "string"
+    },
+    "status": {
+      "maxLength": 256,
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:%/@+-]*$",
+      "title": "Status",
+      "type": "string"
+    },
+    "week_bucket": {
+      "maximum": 4,
+      "minimum": 1,
+      "title": "Week Bucket",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "schema_version",
+    "consultant_source_id",
+    "source_work_id",
+    "week_bucket",
+    "committed_units",
+    "due_time",
+    "status",
+    "lineage_receipt_ids"
+  ],
+  "title": "WorkloadCommitmentV1",
+  "type": "object"
+}

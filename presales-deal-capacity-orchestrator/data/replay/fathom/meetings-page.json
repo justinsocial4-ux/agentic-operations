@@ -1,0 +1,14 @@
+{
+  "items": [
+    {
+      "id": "meet-fict-001",
+      "recording": {"id": "rec-fict-001"},
+      "title": "Fictional EU Discovery Call",
+      "started_at": "2026-08-03T09:00:00Z",
+      "ended_at": "2026-08-03T09:45:00Z",
+      "summary": "Source summary is ignored and never becomes readiness evidence.",
+      "action_items": ["Source action items are ignored and never become evidence."]
+    }
+  ],
+  "next_cursor": "fathom-cursor-page-2"
+}
