@@ -1,6 +1,6 @@
 ---
 name: revops-data-field-normalization
-description: "Standardizes inconsistent data entry across job titles, industries, country codes, and company names in your CRM using published taxonomies (BLS, NAICS, ISO). Detects non-standard formats, maps to canonical references with confidence scoring, applies normalization in bulk or real-time, and maintains transparent audit trails. Day-1 agent that works with messy data. Trigger on: normalize my CRM fields, standardize job titles, clean up industries, fix field values, normalize company names, standardize country codes, deduplicate by normalizing fields, audit field inconsistency."
+description: "Standardizes inconsistent data entry across job titles, industries, country codes, and company names in your CRM using published taxonomies (BLS, NAICS, ISO). Detects non-standard formats, maps to canonical references with confidence scoring, applies normalization in bulk or real-time, and maintains transparent audit trails. Make sure to use this skill whenever the user asks to normalize CRM fields, standardize job titles, clean up industries, fix field values, normalize company names, standardize country codes, deduplicate by normalizing fields, or audit field inconsistency—even if they do not name the agent."
 metadata:
   category: "Data Quality & Hygiene"
   phase: "Phase 1"
@@ -8,16 +8,15 @@ metadata:
   version: "1.0"
   author: "RevOps Agent Factory"
   last_updated: "2026-04-12"
-  dependencies:
-    agents: []
-    mcps:
-      - "Salesforce MCP (Salesforce orgs)"
-      - "HubSpot MCP (HubSpot orgs)"
-    minimum_data:
-      - "Contact object with Title field (job titles)"
-      - "Account/Company object with Industry, Name, BillingCountry/Country fields"
-      - "Lead object with Title and Company fields"
-      - "At least 50 unique values in target field for initial mapping"
+  dependencies: []
+  mcps:
+    - "Salesforce MCP (Salesforce orgs)"
+    - "HubSpot MCP (HubSpot orgs)"
+  minimum_data:
+    - "Contact object with Title field (job titles)"
+    - "Account/Company object with Industry, Name, BillingCountry/Country fields"
+    - "Lead object with Title and Company fields"
+    - "At least 50 unique values in target field for initial mapping"
 
 ---
 
@@ -25,58 +24,7 @@ metadata:
 
 ## Why This Agent Exists
 
-```json
-{
-  "skill_id": "DQH-02",
-  "skill_name": "Field Normalization Agent",
-  "pain_points": [
-    {
-      "id": "DQH02-PP01",
-      "title": "Poor Field Standardization Blocks Accurate Segmentation",
-      "population": "RevOps Manager at B2B SaaS, 100–500 employees, North America",
-      "rubric_pass_count": 4,
-      "rubric_total": 4,
-      "key_stat": "Sales teams waste up to 27% of their time wrestling with poor data quality",
-      "source_url": "https://www.egrabber.com/blog/data-hygiene-best-practices/"
-    },
-    {
-      "id": "DQH02-PP02",
-      "title": "Manual Data Cleanup Is Expensive and Recurring",
-      "population": "RevOps Manager at B2B SaaS, 100–500 employees, North America",
-      "rubric_pass_count": 4,
-      "rubric_total": 4,
-      "key_stat": "16% clean their lists once or twice per year, while 11.2% never clean their lists",
-      "source_url": "https://porchgroupmedia.com/blog/data-hygiene-statistics/"
-    },
-    {
-      "id": "DQH02-PP03",
-      "title": "Non-Standard Formats Corrupt Downstream AI and Automation",
-      "population": "RevOps Manager at B2B SaaS, 100–500 employees, North America",
-      "rubric_pass_count": 4,
-      "rubric_total": 4,
-      "key_stat": "Bad data could cost companies as much as 10–25% of their revenue",
-      "source_url": "https://blog.hubspot.com/customers/5-phases-cleaning-hubspot-crm-data"
-    },
-    {
-      "id": "DQH02-PP04",
-      "title": "High Duplication Rates Due to Field Inconsistency",
-      "population": "RevOps Manager at B2B SaaS, 100–500 employees, North America",
-      "rubric_pass_count": 4,
-      "rubric_total": 4,
-      "key_stat": "Duplication rates between 10%–30% are not uncommon without data quality initiatives",
-      "source_url": "https://blog.hubspot.com/customers/5-phases-cleaning-hubspot-crm-data"
-    }
-  ],
-  "icp": {
-    "role": "RevOps Manager",
-    "company_profile": "B2B SaaS, 100–500 employees",
-    "region": "North America",
-    "primary_pain": "Data standardization blocks automation, segmentation, and reporting",
-    "secondary_pain": "Expensive, recurring manual cleanup",
-    "tertiary_pain": "Corruption of AI models and downstream workflows"
-  }
-}
-```
+The frozen pilot evidence and Scorecard Export Block are preserved verbatim in `references/evidence_scorecard.md`. Read it before citing impact, pricing, urgency, or evidence-quality claims.
 
 ---
 
@@ -84,7 +32,14 @@ metadata:
 
 The Field Normalization Engine standardizes inconsistent data entry across your CRM using published taxonomies. It detects non-standard formats (e.g., "VP of Sales," "V.P. Sales," "VP Sales Engineer"), maps them to canonical reference sets (BLS job codes, NAICS industry codes, ISO country standards), scores each mapping with a confidence percentage, and applies normalization rules in bulk or via real-time automation. You get a detailed report showing what transforms will happen, why they're safe or risky, and exactly which records will be updated.
 
-Unlike point solutions (Insycle, eGrabber), this agent operates natively within the RevOps system, catches new bad data at entry, maintains transparent audit trails, and works on day 1 with messy data.
+---
+
+## How to Use the Bundled Resources
+
+- Read the BLS, NAICS, ISO, and company-variant references when normalizing their corresponding field types.
+- Read `references/normalization_examples.md` for ambiguity and `references/confidence_scoring_algorithm.md` for scoring details.
+- Read `references/evidence_scorecard.md` before citing evidence and `references/end_to_end_session.md` for the full pilot dialogue.
+- During live scoring, bulk-decision preparation, a detailed audit, or an exact-arithmetic request, use `scripts/normalization_rules.py`. For a simple planning-only or no-tools explanation, use the identical inline thresholds and approval rules below.
 
 ---
 
@@ -526,88 +481,7 @@ After field normalization is complete:
 
 ## Example: End-to-End Normalization Session
 
-**You:** "Normalize job titles in my HubSpot. We have a mess of variations like 'VP Sales,' 'V.P. Sales,' 'VP - Sales' and I need them standardized."
-
-**Me (Preflight):**
-```
-✓ HubSpot MCP connected
-✓ Contact.Job Title field ready
-✓ Data completeness: 92% (46,000 / 50,000 non-empty)
-✓ Unique variants found: 2,400
-✓ Field freshness: 87% updated in last 30 days
-
-Ready to analyze. Would you like:
-A) Analysis only (show me mappings, no changes)
-B) Analysis + Approval (show mappings, I wait for your OK before applying)
-C) Pilot + Approval (test on 100 records first, then bulk apply)
-
-Which would you prefer?
-```
-
-**You:** "Let's do pilot + approval. I want to see samples before we touch the whole database."
-
-**Me (Audit & Mapping):**
-```
-Scanning for non-standard variants...
-✓ Found 2,400 unique job title variants in 50,000 records
-✓ Top variants:
-  - "VP Sales" (243 records) → "Vice President of Sales" (0.92 confidence)
-  - "VP of Sales" (187 records) → "Vice President of Sales" (0.95 confidence)
-  - "V.P. Sales" (45 records) → "Vice President of Sales" (0.88 confidence)
-  - "Sales Manager" (892 records) → "Sales Manager" (1.00 confidence)
-  - "Account Exec" (156 records) → "Account Executive" (0.89 confidence)
-  - "AE" (73 records) → "Account Executive" (0.75 confidence — LOW)
-
-High-confidence mappings: 2,050 (85%)
-Medium-confidence mappings: 320 (13%)
-Low-confidence mappings: 30 (2%)
-
-Ready for pilot?
-```
-
-**You:** "Yes, run the pilot on 100 records. But I want to review that 'AE' mapping first. In our org, AE is Account Executive in sales, but sometimes it's used loosely. Can you be more conservative?"
-
-**Me:** "Got it. I'll exclude 'AE' from auto-mapping for now. If it comes up in the pilot, I'll flag it for your decision. Running pilot on 100 records..."
-
-**Pilot Results:**
-```
-Normalized 100 test records
-Sample results:
-  - "VP Sales" (5 records) → "Vice President of Sales" ✓
-  - "Account Exec" (3 records) → "Account Executive" ✓
-  - "Sales" (1 record) → [confidence 0.65, TOO LOW, flagged for review]
-
-False positive rate: 0% (all 100 mappings correct)
-
-One low-confidence record found: "Sales" — likely typo or incomplete data.
-Recommendation: Skip this record; manually review in CRM.
-
-Ready for bulk apply? [Yes / No, adjust rules]
-```
-
-**You:** "Looks great. Apply to all 50,000 records."
-
-**Me (Bulk Apply & Verification):**
-```
-Executing bulk normalization...
-✓ Processed 50,000 records in 12 batches
-✓ Successfully normalized 48,500 records
-⚠️ Skipped 1,500 records (confidence below threshold)
-
-Verifying results (sampling 20 records)...
-✓ 20/20 correct (100% accuracy)
-✓ False positive rate: 0% (estimated)
-
-Done! Here's what changed:
-- 48,500 records normalized to 120 canonical job titles
-- Audit trail created (original_Job_Title field populated with old values)
-- Data quality improved by ~15% (before: 92% clean, after: 98% clean)
-
-Next steps:
-1. Review the 1,500 skipped records at your discretion
-2. Run DQH-04 (CRM Health Score) to validate improvement
-3. Set up weekly normalization on new records? [Yes / No]
-```
+The complete frozen worked session is preserved in `references/end_to_end_session.md`. Read it when you need the original audit, mapping-review, pilot, bulk-apply, and verification dialogue.
 
 ---
 
@@ -621,3 +495,5 @@ Next steps:
 - `company_name_variants.md` — Common company legal suffixes and formatting (Inc., LLC, Ltd., Corp., etc.)
 - `normalization_examples.md` — Real-world examples of tricky normalizations (career changers, acquisition name changes, etc.)
 - `confidence_scoring_algorithm.md` — Detailed Jaro-Winkler implementation and boost logic
+- `evidence_scorecard.md` — Frozen pilot evidence and Scorecard Export Block
+- `end_to_end_session.md` — Frozen end-to-end normalization dialogue

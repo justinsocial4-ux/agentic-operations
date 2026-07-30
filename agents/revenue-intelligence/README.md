@@ -5,4 +5,5 @@ conversations.
 
 | Agent | What it does |
 |---|---|
-| [Call Analysis Agent](revops-call-analysis/SKILL.md) | Extracts objections, competitors, next steps, sentiment, and deal risk from sales calls. |
+| [Call Evidence Review](revops-call-analysis/SKILL.md) | Reviews authorized call transcripts with exact timestamped evidence, approved taxonomy tags, privacy gates, and read-only human review. |
+| [Competitive Win/Loss Evidence Review](revops-competitive-winloss/SKILL.md) | Reviews complete win/loss and competitor evidence populations as separate source-bound lanes without explaining causes, ranking threats, or taking action. |

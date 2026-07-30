@@ -38,27 +38,28 @@ reports, bad forecasts, and wasted sales motion.
 | [Contact Decay Detection](../agents/data-quality-crm-hygiene/revops-data-contact-decay/SKILL.md) | Finds stale contacts that may hurt engagement and sender reputation. |
 | [CRM Health Score Agent](../agents/data-quality-crm-hygiene/revops-data-crm-health-score/SKILL.md) | Scores CRM data quality across key dimensions. |
 | [Enrichment Orchestration Engine](../agents/data-quality-crm-hygiene/revops-data-enrichment-orchestration/SKILL.md) | Routes missing data to enrichment providers and consolidates results. |
+| [Enrichment Route Plan Review](../agents/data-quality-crm-hygiene/revops-enrichment-orchestration/SKILL.md) | Reviews supplied pseudonymous enrichment routes against exact customer policy and provider-contract evidence. |
 | [Account Hierarchy Engine](../agents/data-quality-crm-hygiene/revops-data-account-hierarchy/SKILL.md) | Maps parent-child account relationships. |
 
 ## Marketing Operations
 
 | Agent | Plain-English job |
 |---|---|
-| [Campaign Performance Agent](../agents/marketing-operations/revops-campaign-performance/SKILL.md) | Pulls campaign metrics into one view and flags waste. |
-| [Email Deliverability Agent](../agents/marketing-operations/revops-email-deliverability/SKILL.md) | Monitors sender reputation, authentication, bounces, and spam risk. |
+| [Campaign Performance Agent](../agents/marketing-operations/revops-campaign-performance/SKILL.md) | Reviews complete pseudonymous campaign measurements under exact same-basis contracts without ranking or budget action. |
+| [Email Deliverability Observation Evidence Review](../agents/marketing-operations/revops-email-deliverability/SKILL.md) | Reviews pseudonymous provider-specific observations without scoring, diagnosis, remediation, or system action. |
 
 ## Customer Success Operations
 
 | Agent | Plain-English job |
 |---|---|
-| [Customer Retention Risk Agent](../agents/customer-success-operations/revops-customer-retention-risk/SKILL.md) | Flags accounts likely to churn or fail renewal. |
-| [QBR Prep Agent](../agents/customer-success-operations/revops-qbr-prep/SKILL.md) | Prepares account review materials from CRM, product, and support signals. |
+| [Customer Retention Risk Agent](../agents/customer-success-operations/revops-customer-retention-risk/SKILL.md) | Reviews separate customer evidence lanes against approved rules without predicting churn or taking action. |
+| [QBR Prep Agent](../agents/customer-success-operations/revops-qbr-prep/SKILL.md) | Assembles approved pseudonymous metrics, comparisons, and claim receipts into a human-review QBR evidence packet. |
 
 ## Tech Stack Operations
 
 | Agent | Plain-English job |
 |---|---|
-| [Integration Health Agent](../agents/tech-stack-operations/revops-integration-health/SKILL.md) | Monitors API and system connection health. |
+| [Integration Health Agent](../agents/tech-stack-operations/revops-integration-health/SKILL.md) | Reviews supplied integration observations against customer-authored contracts. |
 | [Tool Adoption Agent](../agents/tech-stack-operations/revops-tool-adoption/SKILL.md) | Finds underused tools and license waste. |
 | [Permission Audit Agent](../agents/tech-stack-operations/revops-permission-audit/SKILL.md) | Flags risky permissions, inactive users, and audit gaps. |
 | [Vendor Performance Agent](../agents/tech-stack-operations/revops-vendor-performance/SKILL.md) | Scores vendors by SLA, support, adoption, and renewal risk. |
@@ -76,15 +77,37 @@ reports, bad forecasts, and wasted sales motion.
 | Agent | Plain-English job |
 |---|---|
 | [New Hire Readiness Agent](../agents/enablement-operations/revops-new-hire-readiness/SKILL.md) | Tracks onboarding and ramp progress. |
-| [Certification Tracking Agent](../agents/enablement-operations/revops-certification-tracking/SKILL.md) | Tracks required training and escalates overdue certifications. |
-| [Coaching Recommendation Agent](../agents/enablement-operations/revops-coaching-recommendation/SKILL.md) | Turns call insights and performance data into coaching recommendations. |
+| [Certification Tracking Agent](../agents/enablement-operations/revops-certification-tracking/SKILL.md) | Reviews pseudonymous certification-assignment evidence under exact customer-authored rules; takes no action. |
+| [Coaching Record Evidence Review](../agents/enablement-operations/revops-coaching-recommendation/SKILL.md) | Reviews pseudonymous customer-authored coaching records and their governance evidence without generating coaching or judging workers. |
+
+## Pricing And Deal Strategy
+
+| Agent | Plain-English job |
+|---|---|
+| [CPQ Assist Agent](../agents/pricing-deal-strategy/revops-cpq-assist/SKILL.md) | Reviews exact quote, catalog, pricing-rule, and approval-process evidence without recommending products or taking action. |
+| [Competitive Price Evidence Review](../agents/pricing-deal-strategy/revops-competitive-pricing/SKILL.md) | Calculates exact same-basis price differences without recommending prices, discounts, negotiations, alerts, or CRM actions. |
+| [Internal Pricing Scenario Evidence Review](../agents/pricing-deal-strategy/revops-pricing-strategy/SKILL.md) | Calculates exact approved internal-versus-scenario price differences without inferring demand, recommending a price, or taking action. |
+
+## Capacity And Planning
+
+| Agent | Plain-English job |
+|---|---|
+| [Territory Scenario Evidence Review](../agents/capacity-planning/revops-territory-design/SKILL.md) | Validates complete territory scenarios without ranking or implementing assignments. |
+| [Revenue Capacity Scenario Review](../agents/capacity-planning/revops-revenue-capacity-planning/SKILL.md) | Shows anonymous revenue-capacity scenario arithmetic without making staffing, budget, quota, territory, or worker decisions. |
+| [Quota Scenario Evidence Review](../agents/capacity-planning/revops-quota-setting/SKILL.md) | Shows exact customer-authored anonymous quota-plan arithmetic without choosing quotas or making compensation, territory, account, worker, customer, or CRM decisions. |
 
 ## Other Focused Agents
 
 | Category | Agent | Plain-English job |
 |---|---|---|
 | Revenue Intelligence | [Call Analysis Agent](../agents/revenue-intelligence/revops-call-analysis/SKILL.md) | Extracts objections, competitors, next steps, and deal risk from sales calls. |
-| Lead Management | [MQL Qualification Agent](../agents/lead-management/revops-mql-qualification/SKILL.md) | Scores and classifies marketing-qualified leads. |
-| Outbound Orchestration | [ICP List Building Agent](../agents/outbound-orchestration/revops-icp-list-building/SKILL.md) | Builds prospect lists from ICP criteria. |
+| Revenue Intelligence | [Competitive Win/Loss Evidence Review](../agents/revenue-intelligence/revops-competitive-winloss/SKILL.md) | Reviews separate source-bound outcome, competitor, reason, interview, annotation, and public-observation evidence without causal or strategic action. |
+| Lead Management | [Marketing Qualification Rule Evidence Review](../agents/lead-management/revops-mql-qualification/SKILL.md) | Reviews exact customer-authored condition evidence without scoring people, applying an MQL label, or taking action. |
+| Lead Management | [Inbound Signal Evidence Review](../agents/lead-management/revops-inbound-intent-signal/SKILL.md) | Validates pseudonymous observation evidence and exact source/privacy receipts without inferring buying intent, identifying or ranking targets, or triggering action. |
+| Outbound Orchestration | [Pseudonymous Candidate Rule Evidence Review](../agents/outbound-orchestration/revops-icp-list-building/SKILL.md) | Reviews complete pseudonymous candidate evidence against exact customer rules without identity enrichment, scoring, ranking, exporting, CRM writes, or outreach. |
 | Event Marketing | [Event Selection Agent](../agents/event-marketing/revops-event-selection/SKILL.md) | Scores which events are worth attending or sponsoring. |
-| Reporting and Analytics | [ELT Pipeline Monitoring Agent](../agents/reporting-analytics/revops-elt-pipeline-monitoring/SKILL.md) | Watches data pipelines for stale data, failures, and schema drift. |
+| Event Marketing | [Event Follow-Up Plan Evidence Review](../agents/event-marketing/revops-event-activation/SKILL.md) | Reviews supplied pseudonymous event follow-up assignments against exact evidence without scoring, ranking, contacting, or writing records. |
+| Reporting and Analytics | [ELT Pipeline Evidence Review](../agents/reporting-analytics/revops-elt-pipeline-monitoring/SKILL.md) | Reviews complete pseudonymous, platform-specific ELT observations against exact customer rules without live access, scoring, diagnosis, alerts, or remediation. |
+| Reporting and Analytics | [Anonymous Rep-Evidence Review](../agents/reporting-analytics/revops-rep-performance/SKILL.md) | Reviews approved anonymous sales-team aggregates without identifying, ranking, coaching, or acting on workers. |
+| Reporting and Analytics | [Board and Executive Deck Evidence Assembly](../agents/reporting-analytics/revops-board-exec-deck/SKILL.md) | Assembles approved pseudonymous metric, comparison, claim, and slide receipts without inventing narrative, recommendations, or publication approval. |
+| Reporting and Analytics | [Attribution Credit Allocation Evidence Review](../agents/reporting-analytics/revops-attribution-engine/SKILL.md) | Allocates an approved measure across anonymous buckets using exact customer-authored weights without claiming causal impact or driving decisions. |
